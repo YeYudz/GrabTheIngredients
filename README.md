@@ -4,7 +4,7 @@
 ![C#](https://img.shields.io/badge/C%23-155%20scripts%20%2F%2031k%20lines-blue?logo=csharp)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20PC-lightgrey)
 
-> 厨房主题的 Unity 2D Roguelite 动作游戏：**波次割草 × 画中画炒菜 × 烹饪音游 BOSS 战**。
+> Unity 2D Roguelite 动作游戏：**波次割草 × 画中画节拍 × 音游放松**。
 > 全部玩法设计、系统架构与数值平衡由个人独立开发完成。
 
 ---
