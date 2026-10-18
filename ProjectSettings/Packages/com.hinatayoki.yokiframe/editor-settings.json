@@ -1,0 +1,60 @@
+{
+  "formatVersion": 1,
+  "settings": [
+    {
+      "kit": "UIKit",
+      "key": "editor.prefabFolder",
+      "value": "Assets/Resources/Prefabs/UI"
+    },
+    {
+      "kit": "UIKit",
+      "key": "editor.scriptFolder",
+      "value": "Assets/Scripts/UI"
+    },
+    {
+      "kit": "UIKit",
+      "key": "editor.scriptNamespace",
+      "value": "GameUI"
+    },
+    {
+      "kit": "UIKit",
+      "key": "editor.assemblyName",
+      "value": "Assembly-CSharp"
+    },
+    {
+      "kit": "UIKit",
+      "key": "editor.codeTemplate",
+      "value": "Default"
+    },
+    {
+      "kit": "AudioKit",
+      "key": "index.scanFolder",
+      "value": "Assets/Art/Audio"
+    },
+    {
+      "kit": "AudioKit",
+      "key": "index.outputPath",
+      "value": "Assets/Scripts/Generated/AudioIds.cs"
+    },
+    {
+      "kit": "AudioKit",
+      "key": "index.manifestPath",
+      "value": "Assets/Settings/YokiFrame/audio-index.json"
+    },
+    {
+      "kit": "AudioKit",
+      "key": "index.namespaceName",
+      "value": "GameAudio"
+    },
+    {
+      "kit": "AudioKit",
+      "key": "index.className",
+      "value": "AudioIds"
+    },
+    {
+      "kit": "AudioKit",
+      "key": "index.startId",
+      "value": "1001"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "_comment": "合成/出售规则（策划可自定义）：combineRequiredCount=合成所需同星同菜数量；combineMaxStar=合成星级上限(达到后不可再合)；dishSellStarMultiplier=成品菜出售倍率(卖价=sellPrice×星级×倍率)；weaponSellMultiplier=武器出售倍率(卖价=sellPrice×倍率)；ingredientSellMultiplier=食材出售倍率(卖价=sellPrice×倍率)",
+  "Craft": {
+    "combineRequiredCount": 3,
+    "combineMaxStar": 5,
+    "dishSellStarMultiplier": 1.0,
+    "weaponSellMultiplier": 1.0,
+    "ingredientSellMultiplier": 1.0
+  }
+}

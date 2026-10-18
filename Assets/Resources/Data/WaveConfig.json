@@ -1,0 +1,479 @@
+{
+  "version": 1,
+  "_comment": "波次表（关卡内共享）。triggersBoss=true 的波次即「BOSS 波」：先刷该波小怪，清空后生成 bossId 指定的 BOSS；该波被关卡阶段配置引用为阶段的最后一波。波次模板 = 2 阶段 x 7 波：waveId 1~7 = 阶段一，waveId 8~14 = 阶段二，每阶段第 7 波为 BOSS 前置波。",
+  "_countCurve": "人数 = 50 x 1.176^(waveId-1)，BOSS 前置波（7/14）x0.5。前段（1~6）533 只 / 后段（8~13）1660 只 = 3.11 倍 —— 后期指数蜂拥，前期轻量教学。",
+  "_spawnPacing": "生成速度（只/秒）是显式变量：线性段每波 +0.30 只/秒；达到软上限 3.6 后进入渐进段，每波只补齐 剩余差距 的 4.5%，硬上限 5.5（= 最小间隔 0.182s，保帧率与可读性）。波 1 = 0.96 只/秒（间隔 1.04s） -> 波 13 = 3.92 只/秒（间隔 0.255s）。",
+  "_budget": "刷怪窗口合计 750s + 准备 60s = 810s（不含清场）；清场按 +16% 估 120s；2 场 BOSS 300s ⇒ 单局 ≈ 1230s ≈ 20.5 分钟。总敌数 2193 只，总经验 8339 → 可拾取 7671，升 10 级需 7081（余量 8.3%）。",
+  "maxAlive": 70,
+  "spawnPacing": {
+    "_desc": "生成速度曲线：线性段 -> 软上限后渐进收紧 -> 硬上限。rateSoftCap/rateHardCap <=0 表示对应段不启用。",
+    "baseSpawnRate": 0.96,
+    "spawnRateGainPerWave": 0.3,
+    "rateSoftCap": 3.6,
+    "rateTightenPerWave": 0.045,
+    "rateHardCap": 5.5,
+    "firstWave": 1
+  },
+  "waveStatGrowth": {
+    "_desc": "每经过一波，敌人属性按固定倍率提升（乘法叠加，与副本难度/词缀相乘）。波 14 时血量 x1.77、攻击 x2.01 —— 这是后期威胁的主要来源，血量刻意压低以保「一击割草」的手感，压力靠数量与攻击。",
+    "hpPerWave": 1.045,
+    "damagePerWave": 1.055,
+    "expPerWave": 1.0,
+    "startWave": 1
+  },
+  "Waves": [
+    {
+      "waveId": 1,
+      "description": "果冻史莱姆零散出现",
+      "prepTime": 4.0,
+      "spawnRadiusMin": 4.0,
+      "spawnRadiusMax": 6.0,
+      "triggersBoss": false,
+      "bossId": "",
+      "maxAlive": 70,
+      "spawnGroups": [
+        {
+          "enemyId": "slime_jelly",
+          "count": 50,
+          "spawnInterval": 1.042
+        }
+      ]
+    },
+    {
+      "waveId": 2,
+      "description": "菜刀哥布林加入战局",
+      "prepTime": 4.0,
+      "spawnRadiusMin": 4.0,
+      "spawnRadiusMax": 7.0,
+      "triggersBoss": false,
+      "bossId": "",
+      "maxAlive": 70,
+      "spawnGroups": [
+        {
+          "enemyId": "slime_jelly",
+          "count": 42,
+          "spawnInterval": 0.794
+        },
+        {
+          "enemyId": "goblin_knife",
+          "count": 17,
+          "spawnInterval": 0.794
+        }
+      ]
+    },
+    {
+      "waveId": 3,
+      "description": "爆炸蘑菇孢子散布",
+      "prepTime": 4.0,
+      "spawnRadiusMin": 4.0,
+      "spawnRadiusMax": 7.0,
+      "triggersBoss": false,
+      "bossId": "",
+      "maxAlive": 70,
+      "spawnGroups": [
+        {
+          "enemyId": "slime_jelly",
+          "count": 40,
+          "spawnInterval": 0.641
+        },
+        {
+          "enemyId": "goblin_knife",
+          "count": 19,
+          "spawnInterval": 0.641
+        },
+        {
+          "enemyId": "mushroom_spore",
+          "count": 10,
+          "spawnInterval": 0.641
+        }
+      ]
+    },
+    {
+      "waveId": 4,
+      "description": "精英初现",
+      "prepTime": 4.0,
+      "spawnRadiusMin": 4.0,
+      "spawnRadiusMax": 7.0,
+      "triggersBoss": false,
+      "bossId": "",
+      "maxAlive": 70,
+      "spawnGroups": [
+        {
+          "enemyId": "slime_jelly",
+          "count": 43,
+          "spawnInterval": 0.538
+        },
+        {
+          "enemyId": "goblin_knife",
+          "count": 23,
+          "spawnInterval": 0.538
+        },
+        {
+          "enemyId": "mushroom_spore",
+          "count": 11,
+          "spawnInterval": 0.538
+        },
+        {
+          "enemyId": "slime_jelly_elite",
+          "count": 4,
+          "spawnInterval": 0.538
+        }
+      ]
+    },
+    {
+      "waveId": 5,
+      "description": "混编推进",
+      "prepTime": 4.0,
+      "spawnRadiusMin": 4.0,
+      "spawnRadiusMax": 7.0,
+      "triggersBoss": false,
+      "bossId": "",
+      "maxAlive": 70,
+      "spawnGroups": [
+        {
+          "enemyId": "slime_jelly",
+          "count": 46,
+          "spawnInterval": 0.463
+        },
+        {
+          "enemyId": "goblin_knife",
+          "count": 26,
+          "spawnInterval": 0.463
+        },
+        {
+          "enemyId": "mushroom_spore",
+          "count": 16,
+          "spawnInterval": 0.463
+        },
+        {
+          "enemyId": "slime_jelly_elite",
+          "count": 6,
+          "spawnInterval": 0.463
+        },
+        {
+          "enemyId": "goblin_knife_elite",
+          "count": 2,
+          "spawnInterval": 0.463
+        }
+      ]
+    },
+    {
+      "waveId": 6,
+      "description": "加压冲锋",
+      "prepTime": 4.0,
+      "spawnRadiusMin": 4.0,
+      "spawnRadiusMax": 7.0,
+      "triggersBoss": false,
+      "bossId": "",
+      "maxAlive": 70,
+      "spawnGroups": [
+        {
+          "enemyId": "slime_jelly",
+          "count": 52,
+          "spawnInterval": 0.407
+        },
+        {
+          "enemyId": "goblin_knife",
+          "count": 30,
+          "spawnInterval": 0.407
+        },
+        {
+          "enemyId": "mushroom_spore",
+          "count": 18,
+          "spawnInterval": 0.407
+        },
+        {
+          "enemyId": "slime_jelly_elite",
+          "count": 8,
+          "spawnInterval": 0.407
+        },
+        {
+          "enemyId": "goblin_knife_elite",
+          "count": 4,
+          "spawnInterval": 0.407
+        }
+      ]
+    },
+    {
+      "waveId": 7,
+      "description": "阶段一·BOSS 前哨（南瓜王登场）",
+      "prepTime": 6.0,
+      "spawnRadiusMin": 6.0,
+      "spawnRadiusMax": 9.0,
+      "triggersBoss": true,
+      "bossId": "pumpkin_king",
+      "maxAlive": 70,
+      "spawnGroups": [
+        {
+          "enemyId": "slime_jelly",
+          "count": 34,
+          "spawnInterval": 0.362
+        },
+        {
+          "enemyId": "goblin_knife",
+          "count": 22,
+          "spawnInterval": 0.362
+        },
+        {
+          "enemyId": "slime_jelly_elite",
+          "count": 10,
+          "spawnInterval": 0.362
+        }
+      ]
+    },
+    {
+      "waveId": 8,
+      "description": "辣椒谷·精英混编",
+      "prepTime": 4.0,
+      "spawnRadiusMin": 4.0,
+      "spawnRadiusMax": 7.0,
+      "triggersBoss": false,
+      "bossId": "",
+      "maxAlive": 70,
+      "spawnGroups": [
+        {
+          "enemyId": "slime_jelly",
+          "count": 66,
+          "spawnInterval": 0.327
+        },
+        {
+          "enemyId": "goblin_knife",
+          "count": 44,
+          "spawnInterval": 0.327
+        },
+        {
+          "enemyId": "mushroom_spore",
+          "count": 20,
+          "spawnInterval": 0.327
+        },
+        {
+          "enemyId": "slime_jelly_elite",
+          "count": 17,
+          "spawnInterval": 0.327
+        },
+        {
+          "enemyId": "goblin_knife_elite",
+          "count": 9,
+          "spawnInterval": 0.327
+        }
+      ]
+    },
+    {
+      "waveId": 9,
+      "description": "熔岩冲锋",
+      "prepTime": 4.0,
+      "spawnRadiusMin": 4.0,
+      "spawnRadiusMax": 7.0,
+      "triggersBoss": false,
+      "bossId": "",
+      "maxAlive": 70,
+      "spawnGroups": [
+        {
+          "enemyId": "slime_jelly",
+          "count": 73,
+          "spawnInterval": 0.298
+        },
+        {
+          "enemyId": "goblin_knife",
+          "count": 51,
+          "spawnInterval": 0.298
+        },
+        {
+          "enemyId": "mushroom_spore",
+          "count": 24,
+          "spawnInterval": 0.298
+        },
+        {
+          "enemyId": "slime_jelly_elite",
+          "count": 22,
+          "spawnInterval": 0.298
+        },
+        {
+          "enemyId": "goblin_knife_elite",
+          "count": 13,
+          "spawnInterval": 0.298
+        }
+      ]
+    },
+    {
+      "waveId": 10,
+      "description": "孢子爆发",
+      "prepTime": 4.0,
+      "spawnRadiusMin": 4.0,
+      "spawnRadiusMax": 7.0,
+      "triggersBoss": false,
+      "bossId": "",
+      "maxAlive": 70,
+      "spawnGroups": [
+        {
+          "enemyId": "slime_jelly",
+          "count": 82,
+          "spawnInterval": 0.271
+        },
+        {
+          "enemyId": "goblin_knife",
+          "count": 60,
+          "spawnInterval": 0.271
+        },
+        {
+          "enemyId": "mushroom_spore",
+          "count": 28,
+          "spawnInterval": 0.271
+        },
+        {
+          "enemyId": "slime_jelly_elite",
+          "count": 28,
+          "spawnInterval": 0.271
+        },
+        {
+          "enemyId": "goblin_knife_elite",
+          "count": 17,
+          "spawnInterval": 0.271
+        }
+      ]
+    },
+    {
+      "waveId": 11,
+      "description": "双精英混编",
+      "prepTime": 4.0,
+      "spawnRadiusMin": 4.0,
+      "spawnRadiusMax": 7.0,
+      "triggersBoss": false,
+      "bossId": "",
+      "maxAlive": 70,
+      "spawnGroups": [
+        {
+          "enemyId": "slime_jelly",
+          "count": 94,
+          "spawnInterval": 0.265
+        },
+        {
+          "enemyId": "goblin_knife",
+          "count": 71,
+          "spawnInterval": 0.265
+        },
+        {
+          "enemyId": "mushroom_spore",
+          "count": 30,
+          "spawnInterval": 0.265
+        },
+        {
+          "enemyId": "slime_jelly_elite",
+          "count": 35,
+          "spawnInterval": 0.265
+        },
+        {
+          "enemyId": "goblin_knife_elite",
+          "count": 23,
+          "spawnInterval": 0.265
+        }
+      ]
+    },
+    {
+      "waveId": 12,
+      "description": "高压推进",
+      "prepTime": 4.0,
+      "spawnRadiusMin": 4.0,
+      "spawnRadiusMax": 7.0,
+      "triggersBoss": false,
+      "bossId": "",
+      "maxAlive": 70,
+      "spawnGroups": [
+        {
+          "enemyId": "slime_jelly",
+          "count": 107,
+          "spawnInterval": 0.26
+        },
+        {
+          "enemyId": "goblin_knife",
+          "count": 83,
+          "spawnInterval": 0.26
+        },
+        {
+          "enemyId": "mushroom_spore",
+          "count": 36,
+          "spawnInterval": 0.26
+        },
+        {
+          "enemyId": "slime_jelly_elite",
+          "count": 42,
+          "spawnInterval": 0.26
+        },
+        {
+          "enemyId": "goblin_knife_elite",
+          "count": 29,
+          "spawnInterval": 0.26
+        }
+      ]
+    },
+    {
+      "waveId": 13,
+      "description": "终段蜂拥",
+      "prepTime": 4.0,
+      "spawnRadiusMin": 4.0,
+      "spawnRadiusMax": 7.0,
+      "triggersBoss": false,
+      "bossId": "",
+      "maxAlive": 70,
+      "spawnGroups": [
+        {
+          "enemyId": "slime_jelly",
+          "count": 122,
+          "spawnInterval": 0.255
+        },
+        {
+          "enemyId": "goblin_knife",
+          "count": 98,
+          "spawnInterval": 0.255
+        },
+        {
+          "enemyId": "mushroom_spore",
+          "count": 38,
+          "spawnInterval": 0.255
+        },
+        {
+          "enemyId": "slime_jelly_elite",
+          "count": 52,
+          "spawnInterval": 0.255
+        },
+        {
+          "enemyId": "goblin_knife_elite",
+          "count": 40,
+          "spawnInterval": 0.255
+        }
+      ]
+    },
+    {
+      "waveId": 14,
+      "description": "阶段二·BOSS 前哨（决战）",
+      "prepTime": 6.0,
+      "spawnRadiusMin": 6.0,
+      "spawnRadiusMax": 9.0,
+      "triggersBoss": true,
+      "bossId": "pumpkin_king",
+      "maxAlive": 70,
+      "spawnGroups": [
+        {
+          "enemyId": "slime_jelly",
+          "count": 87,
+          "spawnInterval": 0.251
+        },
+        {
+          "enemyId": "goblin_knife",
+          "count": 62,
+          "spawnInterval": 0.251
+        },
+        {
+          "enemyId": "slime_jelly_elite",
+          "count": 35,
+          "spawnInterval": 0.251
+        },
+        {
+          "enemyId": "goblin_knife_elite",
+          "count": 22,
+          "spawnInterval": 0.251
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,289 @@
+{
+  "version": 1,
+  "_rhythmNote": "boss 音游谱面按菜谱档位分三级（stages 逐菜差异化）：凉拌黄瓜=易（note 6/2/8/3，bpmScale ≤1.00）、番茄炒蛋=中（8/3/12/4）、烤南瓜=难（10/4/16/5，bpmScale 最高 1.45）。实际难度 = 本表 stages × RhythmConfig.difficulties[rhythmDifficultyId] 倍率（见 DungeonConfig）。⚠️ 当前 BOSS 1「南瓜王」的 BossConfig.recipeId 仍指向 roasted_pumpkin（难档），已由 stage_01 的 rhythmDifficultyId=easy 抵消；3 只 BOSS 阶梯落地时，应把 BOSS 1/2/3 依次改绑 凉拌黄瓜/番茄炒蛋/烤南瓜。",
+  "bossGradeSRatio": 0.85,
+  "bossGradeARatio": 0.7,
+  "bossGradeBRatio": 0.5,
+  "rhythmSkin": {
+    "trackBgSprite": "Art/Rhythm/track_bg",
+    "laneSprite": "",
+    "laneSprites": [
+      "Art/Rhythm/lane_0",
+      "Art/Rhythm/lane_1",
+      "Art/Rhythm/lane_2",
+      "Art/Rhythm/lane_3"
+    ],
+    "noteSprite": "",
+    "noteSprites": [
+      "Art/Rhythm/note_0",
+      "Art/Rhythm/note_1",
+      "Art/Rhythm/note_2",
+      "Art/Rhythm/note_3"
+    ],
+    "holdNoteSprite": "",
+    "holdNoteSprites": [
+      "Art/Rhythm/hold_note_0",
+      "Art/Rhythm/hold_note_1",
+      "Art/Rhythm/hold_note_2",
+      "Art/Rhythm/hold_note_3"
+    ],
+    "judgeLineSprite": "Art/Rhythm/judge_line",
+    "keySprite": "Art/Rhythm/key_bg",
+    "keySprites": [],
+    "stagePillSprite": "Art/Rhythm/stage_pill"
+  },
+  "Recipes": [
+    {
+      "id": "roasted_pumpkin",
+      "recipeName": "烤南瓜",
+      "description": "南瓜慢烤，香甜可口",
+      "iconPath": "Art/Recipe/RoastedPumpkin",
+      "correspondingBossId": "pumpkin_king",
+      "requiredIngredients": [
+        { "id": "pumpkin", "count": 1 },
+        { "id": "soy_sauce", "count": 1 }
+      ],
+      "bpm": 110.0,
+      "fallDuration": 2.0,
+      "buffEffects": [
+        {
+          "buffId": "fail_roasted",
+          "buffName": "失败的烤南瓜",
+          "buffType": "None",
+          "value": 0.0,
+          "duration": 0.0,
+          "description": "烹饪失败，BOSS复活",
+          "isMetaBuff": false
+        },
+        {
+          "buffId": "common_roasted",
+          "buffName": "烤南瓜",
+          "buffType": "Damage",
+          "value": 5.0,
+          "duration": 0.0,
+          "description": "本局攻击力+5",
+          "isMetaBuff": false
+        },
+        {
+          "buffId": "common_roasted_burn",
+          "buffName": "烤南瓜·火候",
+          "buffType": "BurnPower",
+          "value": 1.5,
+          "duration": 0.0,
+          "description": "化学反应：燃烧伤害×1.5",
+          "isMetaBuff": false
+        },
+        {
+          "buffId": "legendary_roasted",
+          "buffName": "传奇·烤南瓜",
+          "buffType": "Damage",
+          "value": 15.0,
+          "duration": 0.0,
+          "description": "本局攻击力+15",
+          "isMetaBuff": true
+        },
+        {
+          "buffId": "legendary_roasted_drop",
+          "buffName": "传奇·食材亲和",
+          "buffType": "IngredientDropRate",
+          "value": 10.0,
+          "duration": 0.0,
+          "description": "初始食材获取率+10%（永久）",
+          "isMetaBuff": true
+        }
+      ],
+      "starEffects": [
+        { "star": 1, "effectId": "eff_pumpkin_warmth" },
+        { "star": 2, "effectId": "eff_pumpkin_warmth_2" },
+        { "star": 3, "effectId": "eff_pumpkin_burn" },
+        { "star": 4, "effectId": "eff_pumpkin_burn_4" },
+        { "star": 5, "effectId": "eff_pumpkin_guard" }
+      ],
+      "stages": [
+        {
+          "stage": 0,
+          "noteCount": 10,
+          "bpmScale": 1.1,
+          "noteConfig": { "trackCount": 2, "beatsPerNote": 1.0 }
+        },
+        {
+          "stage": 1,
+          "noteCount": 4,
+          "bpmScale": 0.9,
+          "noteConfig": { "trackCount": 2, "beatsPerNote": 1.75, "holdBeats": 1.0 }
+        },
+        {
+          "stage": 2,
+          "noteCount": 16,
+          "bpmScale": 1.45,
+          "noteConfig": { "trackCount": 2, "beatsPerNote": 0.5 }
+        },
+        {
+          "stage": 3,
+          "noteCount": 5,
+          "bpmScale": 1.15,
+          "noteConfig": { "trackCount": 4, "beatsPerNote": 0.875, "holdBeats": 1.0 }
+        }
+      ],
+      "isUnlocked": false,
+      "buyPrice": 400,
+      "sellPrice": 80
+    },
+    {
+      "id": "scrambled_eggs_tomato",
+      "recipeName": "番茄炒蛋",
+      "description": "家常美味，酸甜开胃",
+      "iconPath": "Art/Recipe/ScrambledEggsTomato",
+      "correspondingBossId": "",
+      "requiredIngredients": [
+        { "id": "tomato", "count": 1 },
+        { "id": "egg", "count": 1 }
+      ],
+      "bpm": 110.0,
+      "fallDuration": 2.0,
+      "buffEffects": [
+        {
+          "buffId": "fail_scrambled",
+          "buffName": "失败的番茄炒蛋",
+          "buffType": "None",
+          "value": 0.0,
+          "duration": 0.0,
+          "description": "烹饪失败，无奖励",
+          "isMetaBuff": false
+        },
+        {
+          "buffId": "common_scrambled",
+          "buffName": "番茄炒蛋",
+          "buffType": "Damage",
+          "value": 4.0,
+          "duration": 0.0,
+          "description": "本局攻击力+4",
+          "isMetaBuff": false
+        },
+        {
+          "buffId": "legendary_scrambled",
+          "buffName": "传奇·番茄炒蛋",
+          "buffType": "Damage",
+          "value": 8.0,
+          "duration": 0.0,
+          "description": "本局攻击力+8",
+          "isMetaBuff": false
+        }
+      ],
+      "starEffects": [
+        { "star": 1, "effectId": "eff_egg_crit" },
+        { "star": 2, "effectId": "eff_egg_speed" },
+        { "star": 3, "effectId": "eff_egg_speed_3" },
+        { "star": 4, "effectId": "eff_egg_burst" },
+        { "star": 5, "effectId": "eff_crit_passive" }
+      ],
+      "stages": [
+        {
+          "stage": 0,
+          "noteCount": 8,
+          "bpmScale": 1.0,
+          "noteConfig": { "trackCount": 2, "beatsPerNote": 1.0 }
+        },
+        {
+          "stage": 1,
+          "noteCount": 3,
+          "bpmScale": 0.8,
+          "noteConfig": { "trackCount": 2, "beatsPerNote": 2.0, "holdBeats": 1.0 }
+        },
+        {
+          "stage": 2,
+          "noteCount": 12,
+          "bpmScale": 1.3,
+          "noteConfig": { "trackCount": 2, "beatsPerNote": 0.5 }
+        },
+        {
+          "stage": 3,
+          "noteCount": 4,
+          "bpmScale": 1.05,
+          "noteConfig": { "trackCount": 4, "beatsPerNote": 1.0, "holdBeats": 1.0 }
+        }
+      ],
+      "isUnlocked": false,
+      "buyPrice": 200,
+      "sellPrice": 40
+    },
+    {
+      "id": "cucumber_salad",
+      "recipeName": "凉拌黄瓜",
+      "description": "清爽脆嫩，快手小菜",
+      "iconPath": "Art/Recipe/CucumberSalad",
+      "correspondingBossId": "",
+      "requiredIngredients": [
+        { "id": "cucumber", "count": 1 },
+        { "id": "pepper", "count": 1 }
+      ],
+      "bpm": 110.0,
+      "fallDuration": 2.0,
+      "buffEffects": [
+        {
+          "buffId": "fail_salad",
+          "buffName": "失败的凉拌黄瓜",
+          "buffType": "None",
+          "value": 0.0,
+          "duration": 0.0,
+          "description": "烹饪失败，无奖励",
+          "isMetaBuff": false
+        },
+        {
+          "buffId": "common_salad",
+          "buffName": "凉拌黄瓜",
+          "buffType": "MoveSpeed",
+          "value": 0.3,
+          "duration": 0.0,
+          "description": "本局移动速度+0.3",
+          "isMetaBuff": false
+        },
+        {
+          "buffId": "legendary_salad",
+          "buffName": "传奇·凉拌黄瓜",
+          "buffType": "Dodge",
+          "value": 0.05,
+          "duration": 0.0,
+          "description": "本局闪避+5%",
+          "isMetaBuff": false
+        }
+      ],
+      "starEffects": [
+        { "star": 1, "effectId": "eff_cucumber_fresh" },
+        { "star": 2, "effectId": "eff_cucumber_fresh_2" },
+        { "star": 3, "effectId": "eff_cucumber_evade" },
+        { "star": 4, "effectId": "eff_cucumber_evade_4" },
+        { "star": 5, "effectId": "eff_cucumber_shield" }
+      ],
+      "stages": [
+        {
+          "stage": 0,
+          "noteCount": 6,
+          "bpmScale": 0.85,
+          "noteConfig": { "trackCount": 2, "beatsPerNote": 1.0 }
+        },
+        {
+          "stage": 1,
+          "noteCount": 2,
+          "bpmScale": 0.7,
+          "noteConfig": { "trackCount": 2, "beatsPerNote": 2.0, "holdBeats": 1.0 }
+        },
+        {
+          "stage": 2,
+          "noteCount": 8,
+          "bpmScale": 1.0,
+          "noteConfig": { "trackCount": 2, "beatsPerNote": 0.75 }
+        },
+        {
+          "stage": 3,
+          "noteCount": 3,
+          "bpmScale": 0.9,
+          "noteConfig": { "trackCount": 2, "beatsPerNote": 1.0, "holdBeats": 1.0 }
+        }
+      ],
+      "isUnlocked": false,
+      "buyPrice": 150,
+      "sellPrice": 30
+    }
+  ]
+}

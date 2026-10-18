@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "_comment": "商店上架表（元游戏）。type=Character/Weapon/Recipe/Skill；price<=0 回退商品配置的 buyPrice；onSale=false 不上架（仅作后续版本预留条目）。规则：上架表为空 → 回退旧的'全量扫描 buyPrice'逻辑；上架表非空 → 全局接管（某类型无上架项即不显示任何商品；未上架条目一律不显示）。当前版本：每类至少保留一项可购买——菜品 3 道全上架；角色仅 pepper_girl（chef 为初始默认角色）；武器仅 sauce_sprayer（knife/pan/pepper_gun 为初始默认武器）；技能为全部 8 个角色专属技能（大厨 3：chef_true_dmg / chef_execute_strikes / chef_defense_up；椒娘 5：pepper_haste / pepper_orb / pepper_range / pepper_dash / pepper_aoe_slow）。专属技能规则：只有归属角色能装配，且拥有角色不解锁，必须在本表购买后才写入 unlockedSkillIds。大厨另有两个附赠技能（chef_next_strike / chef_recover）由 CharacterConfig.starterSkillIds 定义、随拥有角色自动解锁，故不在本表上架。共有池 com_* 与武器主动技能不参与购买，默认随池/武器解锁。coinSources 为局末发币规则（单一数据源，MetaUpgradeConfig 不再配置 reward）；coinCosts 为货币消耗去向表。",
+  "entries": [
+    {
+      "id": "roasted_pumpkin",
+      "type": "Recipe",
+      "price": 400,
+      "onSale": true
+    },
+    {
+      "id": "scrambled_eggs_tomato",
+      "type": "Recipe",
+      "price": 200,
+      "onSale": true
+    },
+    {
+      "id": "cucumber_salad",
+      "type": "Recipe",
+      "price": 150,
+      "onSale": true
+    },
+    {
+      "id": "chef",
+      "type": "Character",
+      "price": 300,
+      "onSale": false
+    },
+    {
+      "id": "pepper_girl",
+      "type": "Character",
+      "price": 500,
+      "onSale": true
+    },
+    {
+      "id": "knife",
+      "type": "Weapon",
+      "price": 120,
+      "onSale": false
+    },
+    {
+      "id": "pan",
+      "type": "Weapon",
+      "price": 200,
+      "onSale": false
+    },
+    {
+      "id": "pepper_gun",
+      "type": "Weapon",
+      "price": 280,
+      "onSale": false
+    },
+    {
+      "id": "sauce_sprayer",
+      "type": "Weapon",
+      "price": 360,
+      "onSale": true
+    },
+    {
+      "id": "pepper_orb",
+      "type": "Skill",
+      "price": 260,
+      "onSale": true
+    },
+    {
+      "id": "pepper_haste",
+      "type": "Skill",
+      "price": 180,
+      "onSale": true
+    },
+    {
+      "id": "pepper_dash",
+      "type": "Skill",
+      "price": 160,
+      "onSale": true
+    },
+    {
+      "id": "pepper_aoe_slow",
+      "type": "Skill",
+      "price": 140,
+      "onSale": true
+    },
+    {
+      "id": "chef_true_dmg",
+      "type": "Skill",
+      "price": 240,
+      "onSale": true
+    },
+    {
+      "id": "chef_execute_strikes",
+      "type": "Skill",
+      "price": 220,
+      "onSale": true
+    },
+    {
+      "id": "chef_defense_up",
+      "type": "Skill",
+      "price": 160,
+      "onSale": true
+    },
+    {
+      "id": "pepper_range",
+      "type": "Skill",
+      "price": 200,
+      "onSale": true
+    }
+  ],
+  "coinSources": [
+    {
+      "key": "perWave",
+      "desc": "每通过一波次发放的货币",
+      "value": 60
+    },
+    {
+      "key": "perKill",
+      "desc": "每击杀一名敌人发放的货币",
+      "value": 1
+    },
+    {
+      "key": "victoryBonus",
+      "desc": "通关（击败最终 BOSS）额外奖励货币",
+      "value": 300
+    }
+  ],
+  "coinCosts": [
+    {
+      "key": "metaUpgrade",
+      "desc": "永久升级消耗（MetaUpgradeConfig 各条目 baseCost/costGrowth）",
+      "enabled": true
+    },
+    {
+      "key": "shop",
+      "desc": "商店购买消耗（本表 entries 的 price / 商品 buyPrice）",
+      "enabled": true
+    },
+    {
+      "key": "craft",
+      "desc": "合成消耗（饰品 3 合 1 等）",
+      "enabled": true
+    }
+  ]
+}

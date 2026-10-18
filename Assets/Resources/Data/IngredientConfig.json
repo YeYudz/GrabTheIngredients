@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "Ingredients": [
+    { "id": "tomato",    "ingredientName": "番茄",   "ingredientType": 0, "rarity": 1, "iconPath": "Art/Ingredient/Tomato",   "prefabPath": "Prefabs/Drops/Drop_Ingredient", "sellPrice": 1 },
+    { "id": "potato",    "ingredientName": "土豆",   "ingredientType": 0, "rarity": 1, "iconPath": "Art/Ingredient/Potato",   "prefabPath": "Prefabs/Drops/Drop_Ingredient", "sellPrice": 1 },
+    { "id": "pumpkin",   "ingredientName": "南瓜",   "ingredientType": 0, "rarity": 2, "iconPath": "Art/Ingredient/Pumpkin",  "prefabPath": "Prefabs/Drops/Drop_Ingredient", "sellPrice": 3 },
+    { "id": "cucumber",  "ingredientName": "黄瓜",   "ingredientType": 0, "rarity": 1, "iconPath": "Art/Ingredient/Cucumber", "prefabPath": "Prefabs/Drops/Drop_Ingredient", "sellPrice": 1 },
+    { "id": "beef",      "ingredientName": "牛肉",   "ingredientType": 1, "rarity": 1, "iconPath": "Art/Ingredient/Beef",     "prefabPath": "Prefabs/Drops/Drop_Ingredient",     "sellPrice": 2 },
+    { "id": "chicken",   "ingredientName": "鸡肉",   "ingredientType": 1, "rarity": 2, "iconPath": "Art/Ingredient/Chicken",  "prefabPath": "Prefabs/Drops/Drop_Ingredient",     "sellPrice": 3 },
+    { "id": "egg",       "ingredientName": "鸡蛋",   "ingredientType": 3, "rarity": 1, "iconPath": "Art/Ingredient/Egg",      "prefabPath": "Prefabs/Drops/Drop_Ingredient", "sellPrice": 1 },
+    { "id": "pepper",    "ingredientName": "花椒",   "ingredientType": 2, "rarity": 2, "iconPath": "Art/Ingredient/Pepper",   "prefabPath": "Prefabs/Drops/Drop_Ingredient",    "sellPrice": 2 },
+    { "id": "soy_sauce", "ingredientName": "秘制酱", "ingredientType": 2, "rarity": 3, "iconPath": "Art/Ingredient/SoySauce", "prefabPath": "Prefabs/Drops/Drop_Ingredient",    "sellPrice": 5 }
+  ]
+}

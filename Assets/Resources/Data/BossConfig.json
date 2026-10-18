@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "_comment": "BOSS 配置。弱点阶段序列决定「切换点 / 弱点武器类型 / 弱点伤害倍率」；破韧条满 → 进入虚弱状态（伤害再乘 weaknessMultiplier）。",
+  "_hpCalibration": "血量标定方式（2026-10-15 起）：不再写死一个绝对值，而是开启 scaleHpWithPlayerDps，由 BossSpawner 在生成瞬间按玩家**当前单目标 DPS** 反推：finalHp = clamp(targetFightSeconds × DPS, maxHp×(min~max)HpFactor)。maxHp 退化为「基准血量」，只用于界定带宽。原因：玩家单目标 DPS 在「1 把武器 vs 3 把武器满增益」之间相差 40 倍以上（武器 baseAttrs 直接累加进面板 + 攻速可叠 + 暴击/伤害加成叠乘），任何固定血量必然一端失衡——满配 3 秒秒杀、裸装打 2 分钟。",
+  "_expectedDuration": "按 DPS 41(裸装) / 501(起始) / 964(阶段一) / 1985(阶段二) / 2707(攻速顶格) 估算：阶段一 BOSS 约 34~71 秒，阶段二（bossHpScale 1.3）约 45~92 秒。含烹饪音游后单次遭遇约 60~120 秒，两场合计约占单局 12%。",
+  "_weaknessChange": "本次下调：弱点倍率 2.0/2.0/2.5 → 1.4/1.4/1.8，破韧奖励 3.0 → 1.8。理由：实测满配玩家在弱点阶段吃到的是「弱点倍率 × 破韧虚弱倍率」的**叠乘**，最高 7.5 倍，直接把 BOSS 打成秒杀；且破韧条 100 ÷ 每次 10 点 = 10 次命中即破韧，玩家几乎全程处于虚弱状态。现改为破韧条 600（约 2 次/场），倍率回归「奖励」量级。",
+  "Bosses": [
+    {
+      "id": "pumpkin_king",
+      "bossName": "南瓜王",
+      "maxHp": 18000.0,
+      "moveSpeed": 3.2,
+      "attack": 20,
+      "damageType": 0,
+      "breakBarMax": 600.0,
+      "nonWeaknessBreakRatio": 0.25,
+      "weaknessMultiplier": 1.8,
+      "weaknessDuration": 4.0,
+      "scaleHpWithPlayerDps": true,
+      "targetFightSeconds": 70.0,
+      "minHpFactor": 0.25,
+      "maxHpFactor": 8.0,
+      "bpm": 110.0,
+      "beatWindowMs": 100.0,
+      "recipeId": "roasted_pumpkin",
+      "isFinal": true,
+      "dropRareIngredientId": "pumpkin",
+      "prefabPath": "Prefabs/Boss/Boss_PumpkinKing",
+      "iconPath": "Art/BossIcon/PumpkinKing",
+      "description": "潜伏在农田深处的巨型南瓜魔王。随血量降低会切换弱点属性，命中弱点可快速击破韧性条，破韧后进入虚弱状态受到额外伤害。",
+      "bgmPaths": ["Audio/Bgm/BgmBoss", "Audio/Bgm/BgmBoss2", "Audio/Bgm/BgmBoss3"],
+      "phases": [
+        {
+          "phaseIndex": 0,
+          "hpThreshold": 1.0,
+          "weaknessType": 0,
+          "weaknessDamageMultiplier": 1.4,
+          "breakBarOnHit": 10.0
+        },
+        {
+          "phaseIndex": 1,
+          "hpThreshold": 0.7,
+          "weaknessType": 2,
+          "weaknessDamageMultiplier": 1.4,
+          "breakBarOnHit": 10.0
+        },
+        {
+          "phaseIndex": 2,
+          "hpThreshold": 0.4,
+          "weaknessType": 1,
+          "weaknessDamageMultiplier": 1.8,
+          "breakBarOnHit": 15.0
+        }
+      ]
+    }
+  ]
+}

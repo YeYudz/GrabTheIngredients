@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "_comment": "局外永久升级（核心几项，只做加值，上限20级）。数值曲线：第L级增量=valuePerLevel×(1+valueGrowth×(L-1))，满级累计=valuePerLevel×(maxLevel+valueGrowth×Σ(L-1))；价格曲线：升到L+1花费=round(baseCost×(1+costGrowth)^L)，0→1级=baseCost；满级总花费=baseCost×((1+costGrowth)^maxLevel-1)/costGrowth。attrKey=PlayerAttribute字段名。发币规则不在此文件，统一由 MetaShopConfig.json 的 coinSources 提供。标定基线（PC/买断制/单局约20分钟）：单局收入约 3,070 币，满元树合计约 59,400 币 ≈ 19 局；各列 baseCost 按「满级收益量级」排序，避免出现某列性价比断崖。",
+  "entries": [
+    {
+      "id": "up_attack",
+      "name": "厨艺精进",
+      "desc": "攻击力 +",
+      "attrKey": "Attack",
+      "valuePerLevel": 0.5,
+      "valueGrowth": 0.10,
+      "maxLevel": 20,
+      "baseCost": 150,
+      "costGrowth": 0.15
+    },
+    {
+      "id": "up_hp",
+      "name": "体质强健",
+      "desc": "生命上限 +",
+      "attrKey": "MaxHp",
+      "valuePerLevel": 5.0,
+      "valueGrowth": 0.06,
+      "maxLevel": 20,
+      "baseCost": 110,
+      "costGrowth": 0.15
+    },
+    {
+      "id": "up_crit",
+      "name": "火候精准",
+      "desc": "暴击率 +",
+      "attrKey": "CritChance",
+      "valuePerLevel": 0.01,
+      "valueGrowth": 0.0,
+      "maxLevel": 20,
+      "baseCost": 95,
+      "costGrowth": 0.15
+    },
+    {
+      "id": "up_movespeed",
+      "name": "身法轻盈",
+      "desc": "移动速度 +",
+      "attrKey": "MoveSpeed",
+      "valuePerLevel": 0.05,
+      "valueGrowth": 0.08,
+      "maxLevel": 20,
+      "baseCost": 85,
+      "costGrowth": 0.15
+    },
+    {
+      "id": "up_mana",
+      "name": "灵感涌现",
+      "desc": "法力上限 +",
+      "attrKey": "MaxMana",
+      "valuePerLevel": 2.5,
+      "valueGrowth": 0.10,
+      "maxLevel": 20,
+      "baseCost": 70,
+      "costGrowth": 0.15
+    },
+    {
+      "id": "up_physdef",
+      "name": "铁锅护体",
+      "desc": "物理防御 +",
+      "attrKey": "PhysDef",
+      "valuePerLevel": 0.2,
+      "valueGrowth": 0.10,
+      "maxLevel": 20,
+      "baseCost": 70,
+      "costGrowth": 0.15
+    }
+  ]
+}

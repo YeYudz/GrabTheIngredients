@@ -1,0 +1,153 @@
+{
+  "version": 1,
+  "defaultDungeonId": "stage_01_green_valley",
+  "_comment": "副本=章节（难度递增）。每个副本由若干「阶段」组成，每个阶段 = 若干小怪波次 + 末尾 1 个 BOSS 波（BOSS 波也计入 waveIds，且是最后一项）；击败末尾 BOSS 才算该阶段完成并出阶段结算页。enemy*Scale 为副本难度倍率，作用于本关全部敌人。eventSlots 的 minWave/maxWave 为本关累计波次序号（跨阶段连续，1 起）。",
+  "_waveTemplate": "当前所有副本共用 14 波模板：waveId 1~7 = 阶段一，waveId 8~14 = 阶段二，阶段末波（7 / 14）为 BOSS 前置波。人数按 x1.176/波 指数递增（前段 533 只 / 后段 1660 只 = 3.11 倍），生成速度按 spawnPacing 曲线从 0.96 只/秒 递进到 3.92 只/秒，敌人属性按 waveStatGrowth 每波递增（波 14 时血量 x1.77 / 攻击 x2.01）。单局预算约 20.5 分钟、升 10 级、总敌数 2193。详见 TIPS/关卡节奏与平衡重制_v4.md。",
+  "_bossHp": "bossHpScale 为阶段难度倍率，作用方式：BOSS 血量 = BossConfig.maxHp × bossHpScale；若 BossConfig.scaleHpWithPlayerDps=true，则改由玩家当前单目标 DPS 反推（见 BossConfig._hpCalibration）。BOSS 不吃 enemyHpScale。",
+  "_backGround": "每个副本的 BackGround = 战场背景图的 Resources 路径（不含扩展名，相对 Resources/，例如 Art/Scene/BG_Battle1）。GameManager 应用副本后由 Arena 读取该字段加载背景铺满 ArenaBounds；留空则沿用 Arena 预制体上的默认背景/程序化木纹。现有美术：BG_Battle1 / BG_Battle2 / BG_Battle3（第 3 张留给待新增的第 3 个副本）。",
+  "_difficultyLadder": "5 副本难度阶梯（副本 3~5 待剧情落地后新增，数值按此表填）：1) 翠绿山谷 hp1.00/dmg1.00/spd1.00/exp1.00/drop1.00 音游easy 王血量1.00+1.30；2) 烈焰辣椒谷 hp1.25/dmg1.15/spd1.08/exp1.05/drop1.10 音游normal 王1.15+1.45；3) hp1.50/dmg1.30/spd1.12/exp1.10/drop1.20 音游normal 王1.35+1.65；4) hp1.75/dmg1.45/spd1.16/exp1.15/drop1.30 音游hard 王1.55+1.85；5) hp2.00/dmg1.60/spd1.20/exp1.20/drop1.40 音游hard 王1.75+2.10。注：BOSS 不吃 enemyHpScale，只吃 phase.bossHpScale。",
+  "Dungeons": [
+    {
+      "dungeonId": "stage_01_green_valley",
+      "dungeonName": "翠绿山谷",
+      "iconPath": "Art/Dungeon/GreenValley",
+      "BackGround": "Art/Scene/BG_Battle1",
+      "info": "新手厨师的第一个副本，食材拟态怪温和却数量众多，适合熟悉操作与技能搭配。",
+      "enemyOverview": "果冻史莱姆 / 菜刀哥布林 / 爆炸蘑菇 / 精英·果冻史莱姆 / 精英·菜刀哥布林",
+      "tip": "BOSS 南瓜王：弱点随血量切换，蔬菜、香料、肉类，建议带齐三类武器。",
+      "order": 1,
+      "isUnlocked": true,
+      "enemyHpScale": 1.0,
+      "enemyDamageScale": 1.0,
+      "enemySpeedScale": 1.0,
+      "enemyExpScale": 1.0,
+      "dropRateScale": 1.0,
+      "fieldCookingTrigger": 0,
+      "rhythmDifficultyId": "easy",
+      "phases": [
+        {
+          "phaseId": "p1_outskirt",
+          "phaseName": "山谷外围",
+          "waveIds": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "bossId": "pumpkin_king",
+          "bossHpScale": 1.0
+        },
+        {
+          "phaseId": "p2_kitchen",
+          "phaseName": "厨房深处",
+          "waveIds": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "bossId": "pumpkin_king",
+          "bossHpScale": 1.3
+        }
+      ],
+      "eventSlots": [
+        {
+          "eventId": "random_cook_01",
+          "kind": 0,
+          "probability": 0.35,
+          "minWave": 2,
+          "maxWave": 5,
+          "oncePerDungeon": false,
+          "cooldownWaves": 1
+        },
+        {
+          "eventId": "random_cook_04",
+          "kind": 0,
+          "probability": 0.4,
+          "minWave": 9,
+          "maxWave": 12,
+          "oncePerDungeon": false,
+          "cooldownWaves": 2
+        }
+      ],
+      "_waveTemplate": "当前所有副本共用 14 波模板：waveId 1~7 = 阶段一，waveId 8~14 = 阶段二，阶段末波（7 / 14）为 BOSS 前置波。人数按 x1.176/波 指数递增（前段 533 只 / 后段 1660 只 = 3.11 倍），生成速度按 spawnPacing 曲线从 0.96 只/秒 递进到 3.92 只/秒，敌人属性按 waveStatGrowth 每波递增（波 14 时血量 x1.77 / 攻击 x2.01）。单局预算约 20.5 分钟、升 10 级、总敌数 2193。详见 TIPS/关卡节奏与平衡重制_v4.md。"
+    },
+    {
+      "dungeonId": "stage_02_volcano",
+      "dungeonName": "烈焰辣椒谷",
+      "iconPath": "Art/Dungeon/Volcano",
+      "BackGround": "Art/Scene/BG_Battle2",
+      "info": "高温难耐的辣椒地带，敌人更耐打、伤害更高，精英怪出现频率明显上升。",
+      "enemyOverview": "果冻史莱姆 / 菜刀哥布林 / 爆炸蘑菇 / 精英·果冻史莱姆 / 精英·菜刀哥布林",
+      "tip": "BOSS 南瓜王：弱点随血量切换，蔬菜、香料、肉类，建议带齐三类武器。",
+      "order": 2,
+      "isUnlocked": false,
+      "enemyHpScale": 1.25,
+      "enemyDamageScale": 1.15,
+      "enemySpeedScale": 1.08,
+      "enemyExpScale": 1.05,
+      "dropRateScale": 1.1,
+      "fieldCookingTrigger": 0,
+      "rhythmDifficultyId": "normal",
+      "phases": [
+        {
+          "phaseId": "p1_pepper_field",
+          "phaseName": "辣椒田",
+          "waveIds": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "bossId": "pumpkin_king",
+          "bossHpScale": 1.15
+        },
+        {
+          "phaseId": "p2_volcano_core",
+          "phaseName": "熔岩核心",
+          "waveIds": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "bossId": "pumpkin_king",
+          "bossHpScale": 1.45
+        }
+      ],
+      "eventSlots": [
+        {
+          "eventId": "random_cook_02",
+          "kind": 0,
+          "probability": 0.5,
+          "minWave": 1,
+          "maxWave": 4,
+          "oncePerDungeon": false,
+          "cooldownWaves": 1
+        },
+        {
+          "eventId": "random_cook_03",
+          "kind": 0,
+          "probability": 0.6,
+          "minWave": 9,
+          "maxWave": 12,
+          "oncePerDungeon": true,
+          "cooldownWaves": 0
+        }
+      ],
+      "_waveTemplate": "当前所有副本共用 14 波模板：waveId 1~7 = 阶段一，waveId 8~14 = 阶段二，阶段末波（7 / 14）为 BOSS 前置波。人数按 x1.176/波 指数递增（前段 533 只 / 后段 1660 只 = 3.11 倍），生成速度按 spawnPacing 曲线从 0.96 只/秒 递进到 3.92 只/秒，敌人属性按 waveStatGrowth 每波递增（波 14 时血量 x1.77 / 攻击 x2.01）。单局预算约 20.5 分钟、升 10 级、总敌数 2193。详见 TIPS/关卡节奏与平衡重制_v4.md。"
+    }
+  ]
+}

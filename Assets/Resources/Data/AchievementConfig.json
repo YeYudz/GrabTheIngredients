@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "_comment": "iconPath 为占位路径（Art/Icons/ 下），美术就位后按此命名替换；空字符串=隐藏图标",
+  "Achievements": [
+    {
+      "achievementId": "ach_kill_50",
+      "title": "初露锋芒",
+      "description": "累计击杀 50 个敌人",
+      "category": 0,
+      "pointValue": 10,
+      "isSecret": false,
+      "iconPath": "Art/AchievementConfig/Kill50",
+      "conditions": [ { "type": 0, "targetValue": 50 } ],
+      "rewards": [ { "type": 0, "rewardId": "", "amount": 300 } ]
+    },
+    {
+      "achievementId": "ach_kill_200",
+      "title": "牛刀小试",
+      "description": "累计击杀 200 个敌人",
+      "category": 0,
+      "pointValue": 30,
+      "isSecret": false,
+      "iconPath": "Art/AchievementConfig/Kill200",
+      "conditions": [ { "type": 0, "targetValue": 200 } ],
+      "rewards": [ { "type": 0, "rewardId": "", "amount": 800 } ]
+    },
+    {
+      "achievementId": "ach_wave_4",
+      "title": "四波全清",
+      "description": "到达第 4 波（BOSS 关）",
+      "category": 0,
+      "pointValue": 15,
+      "isSecret": false,
+      "iconPath": "Art/AchievementConfig/Wave",
+      "conditions": [ { "type": 1, "targetValue": 4 } ],
+      "rewards": [ { "type": 0, "rewardId": "", "amount": 500 } ]
+    },
+    {
+      "achievementId": "ach_boss_1",
+      "title": "南瓜克星",
+      "description": "击败 1 个 BOSS",
+      "category": 0,
+      "pointValue": 20,
+      "isSecret": false,
+      "iconPath": "Art/AchievementConfig/Boss",
+      "conditions": [ { "type": 5, "targetValue": 1 } ],
+      "rewards": [ { "type": 1, "rewardId": "pumpkin", "amount": 2 } ]
+    },
+    {
+      "achievementId": "ach_cook_first",
+      "title": "初灶",
+      "description": "完成 1 次烹饪（战场炒菜或 Boss 音游）",
+      "category": 1,
+      "pointValue": 5,
+      "isSecret": false,
+      "iconPath": "Art/AchievementConfig/Cook",
+      "conditions": [ { "type": 2, "targetValue": 1 } ],
+      "rewards": [ { "type": 0, "rewardId": "", "amount": 200 } ]
+    },
+    {
+      "achievementId": "ach_cook_20",
+      "title": "厨房新手",
+      "description": "累计完成 20 次烹饪",
+      "category": 1,
+      "pointValue": 25,
+      "isSecret": false,
+      "iconPath": "Art/AchievementConfig/Cook20",
+      "conditions": [ { "type": 2, "targetValue": 20 } ],
+      "rewards": [ { "type": 0, "rewardId": "", "amount": 600 } ]
+    },
+    {
+      "achievementId": "ach_perfect_10",
+      "title": "精准火候",
+      "description": "战场炒菜累计 10 次完美判定",
+      "category": 1,
+      "pointValue": 20,
+      "isSecret": false,
+      "iconPath": "Art/AchievementConfig/Perfect",
+      "conditions": [ { "type": 3, "targetValue": 10 } ],
+      "rewards": [ { "type": 1, "rewardId": "egg", "amount": 3 } ]
+    },
+    {
+      "achievementId": "ach_battlefield_first",
+      "title": "初火",
+      "description": "第一次在战场上炒菜",
+      "category": 5,
+      "pointValue": 15,
+      "isSecret": true,
+      "secretDescription": "你第一次在战场上炒了菜……",
+      "iconPath": "Art/AchievementConfig/FieldCook",
+      "conditions": [ { "type": 4, "targetValue": 1 } ],
+      "rewards": [ { "type": 0, "rewardId": "", "amount": 300 } ]
+    },
+    {
+      "achievementId": "ach_collect_5",
+      "title": "尝鲜家",
+      "description": "图鉴收集 5 道菜品",
+      "category": 3,
+      "pointValue": 15,
+      "isSecret": false,
+      "iconPath": "Art/AchievementConfig/Collect",
+      "conditions": [ { "type": 6, "targetValue": 5 } ],
+      "rewards": [ { "type": 0, "rewardId": "", "amount": 500 } ]
+    },
+    {
+      "achievementId": "ach_collect_all",
+      "title": "满汉全席",
+      "description": "收集图鉴中全部菜品",
+      "category": 3,
+      "pointValue": 50,
+      "isSecret": false,
+      "iconPath": "Art/AchievementConfig/CollectAll",
+      "conditions": [ { "type": 6, "targetValue": 999 } ],
+      "rewards": [ { "type": 0, "rewardId": "", "amount": 2000 } ]
+    },
+    {
+      "achievementId": "ach_gold_1000",
+      "title": "小有积蓄",
+      "description": "累计获得 1000 金币",
+      "category": 4,
+      "pointValue": 10,
+      "isSecret": false,
+      "iconPath": "Art/AchievementConfig/Gold",
+      "conditions": [ { "type": 7, "targetValue": 1000 } ],
+      "rewards": [ { "type": 0, "rewardId": "", "amount": 200 } ]
+    },
+    {
+      "achievementId": "ach_games_3",
+      "title": "常客",
+      "description": "游玩 3 局游戏",
+      "category": 4,
+      "pointValue": 10,
+      "isSecret": false,
+      "iconPath": "Art/AchievementConfig/Games",
+      "conditions": [ { "type": 8, "targetValue": 3 } ],
+      "rewards": [ { "type": 0, "rewardId": "", "amount": 400 } ]
+    }
+  ]
+}

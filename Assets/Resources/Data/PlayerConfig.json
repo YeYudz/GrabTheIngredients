@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "Player": {
+    "expToNextLevel": 40,
+    "expGrowthRate": 1.63,
+    "meleeOrbitRadius": 0.8,
+    "meleePivotOffset": 0.5,
+    "meleeTicksPerLap": 4,
+    "meleeMaxOuterRadius": 10.0,
+    "maxAttackSpeedBonus": 1.2,
+    "expLinearLevels": 3,
+    "expLinearStep": 25,
+    "minAttackSpeedBonus": -0.6
+  }
+}

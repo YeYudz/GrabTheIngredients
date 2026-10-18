@@ -1,0 +1,23 @@
+{
+  "ProjectRoot": ".",
+  "LubanConfigPath": "Luban/MiniTemplate/luban.conf",
+  "LubanWorkDir": "Luban/MiniTemplate",
+  "LubanExecutablePath": "Luban/Tools/Luban/Luban.dll",
+  "LubanAgentExecutablePath": "",
+  "LubanMcpExecutablePath": "",
+  "LubanSkillsPath": "",
+  "TargetName": "client",
+  "CodeTarget": "cs-bin",
+  "DataTarget": "bin",
+  "OutputDataDir": "Assets/Resources/Art/Table/",
+  "OutputCodeDir": "Assets/Scripts/TableKit/",
+  "IsAddressable": false,
+  "RuntimePathPattern": "",
+  "UseRawResourceLoading": true,
+  "GenerateExternalTypeUtil": false,
+  "UseAssemblyDefinition": false,
+  "AssemblyName": "YokiFrame.TableKit",
+  "ExtraOutputTargets": [],
+  "CustomEditorDataPath": false,
+  "EditorDataPath": "Assets/Resources/Art/Table/"
+}

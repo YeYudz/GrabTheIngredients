@@ -1,0 +1,1098 @@
+{
+  "version": 1,
+  "_comment": "复杂增益效果库。trigger: 0=立即 1=常驻被动 2=低血触发(阶段2扩展 3=命中 4=技能 5=击杀 6=受伤 7=暴击 8=烹饪 9=波次开始)。action: 0=伤害 1=攻速 2=移速 3=最大生命 4=护盾 5=回血 7=暴击率 8=暴击伤害 9=物伤 10=元素伤(阶段2扩展 11=飞弹 12=燃烧 13=减速 14=眩晕 15=范围伤害 16=经验 17=反伤 18=缩放 19=金币 20=食材)。数值可用 baseValue / min~max 随机 / percentOfAttack / percentOfMaxHp / percentOfMoveSpeed；不写 duration 即 duration=0（即时或常驻），写了 duration(秒) 为限时、可按需 decay=true 线性衰减到 0。定位约定：战场炒菜=限时小增益(务必配 duration)；本局常驻增益归升级3选1(由 BuffUpgradeConfig.effectId 引用本库)；成品菜星级效果=常驻被动(trigger=1)。",
+  "Effects": [
+    {
+      "effectId": "eff_chef_passive",
+      "effectName": "厨神之心",
+      "description": "每有 1 点移动速度，获得 2% 攻击力",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 43,
+          "baseValue": 0.02
+        }
+      ]
+    },
+    {
+      "effectId": "eff_pepper_passive",
+      "effectName": "嗜辣成性",
+      "description": "对低于 50% 生命值的敌方单位额外造成 50% 攻击力的伤害，每个目标单位有 12 秒冷却",
+      "trigger": 3,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 44,
+          "percentOfAttack": 0.5,
+          "baseValue": 12
+        }
+      ]
+    },
+    {
+      "effectId": "eff_garlic_rage",
+      "effectName": "蒜香怒火",
+      "trigger": 0,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 0,
+          "baseValue": 18,
+          "duration": 8,
+          "decay": true
+        },
+        {
+          "action": 1,
+          "baseValue": 0.3,
+          "duration": 8,
+          "decay": true
+        }
+      ]
+    },
+    {
+      "effectId": "eff_quick_flip",
+      "effectName": "颠勺疾风",
+      "trigger": 0,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 1,
+          "baseValue": 0.5,
+          "duration": 8,
+          "decay": true
+        },
+        {
+          "action": 2,
+          "percentOfMoveSpeed": 0.8,
+          "duration": 8,
+          "decay": true
+        }
+      ]
+    },
+    {
+      "effectId": "eff_chili_dash",
+      "effectName": "辣椒疾冲",
+      "trigger": 0,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 2,
+          "percentOfMoveSpeed": 1.2,
+          "duration": 6,
+          "decay": true
+        },
+        {
+          "action": 7,
+          "baseValue": 0.1,
+          "duration": 6,
+          "decay": true
+        }
+      ]
+    },
+    {
+      "effectId": "eff_oil_burst",
+      "effectName": "油爆强化",
+      "trigger": 0,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 9,
+          "baseValue": 0.15,
+          "duration": 6,
+          "decay": true
+        },
+        {
+          "action": 10,
+          "baseValue": 0.1,
+          "duration": 6,
+          "decay": true
+        }
+      ]
+    },
+    {
+      "effectId": "eff_warm_soup",
+      "effectName": "暖胃汤",
+      "trigger": 0,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 5,
+          "percentOfMaxHp": 0.3
+        },
+        {
+          "action": 3,
+          "baseValue": 20,
+          "duration": 10
+        }
+      ]
+    },
+    {
+      "effectId": "eff_ice_guard",
+      "effectName": "冰镇守护",
+      "trigger": 0,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 4,
+          "percentOfMaxHp": 0.2,
+          "duration": 6,
+          "decay": true
+        },
+        {
+          "action": 7,
+          "baseValue": 0.05,
+          "duration": 6,
+          "decay": true
+        }
+      ]
+    },
+    {
+      "effectId": "eff_low_hp_shield",
+      "effectName": "危急护盾",
+      "trigger": 2,
+      "triggerParam": 0.35,
+      "cooldown": 75,
+      "actions": [
+        {
+          "action": 4,
+          "percentOfMaxHp": 0.65,
+          "duration": 6,
+          "decay": true
+        },
+        {
+          "action": 2,
+          "percentOfMoveSpeed": 1.5,
+          "duration": 6,
+          "decay": true
+        }
+      ]
+    },
+    {
+      "effectId": "eff_berserk_passive",
+      "effectName": "狂厨之怒",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 0,
+          "baseValue": 15
+        },
+        {
+          "action": 1,
+          "baseValue": 0.25
+        }
+      ]
+    },
+    {
+      "effectId": "eff_crit_passive",
+      "effectName": "致命厨艺",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 7,
+          "baseValue": 0.1
+        },
+        {
+          "action": 8,
+          "baseValue": 0.25
+        }
+      ]
+    },
+    {
+      "effectId": "eff_up_giant",
+      "effectName": "铁壁",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 4,
+          "percentOfMaxHp": 0.2
+        },
+        {
+          "action": 3,
+          "percentOfMaxHp": 0.2
+        }
+      ]
+    },
+    {
+      "effectId": "eff_up_swift",
+      "effectName": "疾风常驻",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 2,
+          "baseValue": 0.6
+        },
+        {
+          "action": 1,
+          "baseValue": 0.15
+        }
+      ]
+    },
+    {
+      "effectId": "eff_pumpkin_warmth",
+      "effectName": "南瓜暖意",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 3,
+          "baseValue": 12
+        }
+      ]
+    },
+    {
+      "effectId": "eff_pumpkin_burn",
+      "effectName": "南瓜焦香",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 0,
+          "baseValue": 8
+        },
+        {
+          "action": 10,
+          "baseValue": 0.1
+        }
+      ]
+    },
+    {
+      "effectId": "eff_pumpkin_guard",
+      "effectName": "南瓜守护",
+      "trigger": 0,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 4,
+          "percentOfMaxHp": 0.4,
+          "duration": 0
+        }
+      ]
+    },
+    {
+      "effectId": "eff_egg_crit",
+      "effectName": "蛋香锐利",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 7,
+          "baseValue": 0.05
+        }
+      ]
+    },
+    {
+      "effectId": "eff_egg_speed",
+      "effectName": "快手翻炒",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 1,
+          "baseValue": 0.15
+        }
+      ]
+    },
+    {
+      "effectId": "eff_egg_burst",
+      "effectName": "蛋爆狂攻",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 0,
+          "baseValue": 20
+        },
+        {
+          "action": 8,
+          "baseValue": 0.4
+        }
+      ]
+    },
+    {
+        "effectId": "eff_cucumber_fresh",
+        "effectName": "清爽身法",
+        "trigger": 1,
+        "cooldown": 0,
+        "actions": [
+          {
+            "action": 2,
+            "percentOfMoveSpeed": 0.3
+          }
+        ]
+    },
+    {
+      "effectId": "eff_cucumber_evade",
+      "effectName": "灵巧走位",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 7,
+          "baseValue": 0.08
+        }
+      ]
+    },
+    {
+      "effectId": "eff_cucumber_shield",
+      "effectName": "凉拌护体",
+      "trigger": 0,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 4,
+          "percentOfMaxHp": 0.25,
+          "duration": 0
+        }
+      ]
+    },
+    {
+      "effectId": "eff_pumpkin_warmth_2",
+      "effectName": "南瓜暖意 II",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 3,
+          "baseValue": 18
+        }
+      ]
+    },
+    {
+      "effectId": "eff_pumpkin_burn_4",
+      "effectName": "南瓜焦香 IV",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 0,
+          "baseValue": 24
+        },
+        {
+          "action": 10,
+          "baseValue": 0.2
+        }
+      ]
+    },
+    {
+      "effectId": "eff_egg_speed_3",
+      "effectName": "快手翻炒 III",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 1,
+          "baseValue": 0.25
+        }
+      ]
+    },
+    {
+        "effectId": "eff_cucumber_fresh_2",
+        "effectName": "清爽身法 II",
+        "trigger": 1,
+        "cooldown": 0,
+        "actions": [
+          {
+            "action": 2,
+            "percentOfMoveSpeed": 0.45
+          }
+        ]
+    },
+    {
+      "effectId": "eff_cucumber_evade_4",
+      "effectName": "灵巧走位 IV",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 7,
+          "baseValue": 0.15
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_000",
+      "effectName": "暴走疾袭",
+      "description": "获得 60% 移动速度",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 2,
+          "percentOfMoveSpeed": 0.6
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_001",
+      "effectName": "翻滚护盾",
+      "description": "闪避后获得持续2秒、相当于100%攻击力的护盾(10秒冷却)",
+      "trigger": 10,
+      "cooldown": 10,
+      "actions": [
+        {
+          "action": 4,
+          "percentOfAttack": 1.0,
+          "duration": 2
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_002",
+      "effectName": "折返疾风",
+      "description": "闪避后获得持续2秒的120%移动速度",
+      "trigger": 10,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 2,
+          "percentOfMoveSpeed": 1.2,
+          "duration": 2
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_003",
+      "effectName": "逐影之刃",
+      "description": "攻击额外造成(移动速度 × 4)点伤害，随移速成长",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 40,
+          "percentOfMoveSpeed": 4.0
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_004",
+      "effectName": "战后补给",
+      "description": "造成伤害后有 0.4 秒间隔地回复 1.5% 最大生命与 5 点法力",
+      "trigger": 3,
+      "cooldown": 0.4,
+      "actions": [
+        {
+          "action": 5,
+          "percentOfMaxHp": 0.015
+        },
+        {
+          "action": 28,
+          "baseValue": 5
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_005",
+      "effectName": "快手烹调",
+      "description": "获得35%攻击速度",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 1,
+          "baseValue": 0.35
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_006",
+      "effectName": "定时坚盾",
+      "description": "每15秒获得一层护盾来格挡下一个敌方攻击",
+      "trigger": 11,
+      "triggerParam": 15,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 31,
+          "baseValue": 1
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_007",
+      "effectName": "进阶升华",
+      "description": "升华：获得 8% 最终伤害提升",
+      "trigger": 0,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 37,
+          "baseValue": 0.08
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_008",
+      "effectName": "气血俱进",
+      "description": "攻击造成额外(8.5%最大生命值)伤害",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 36,
+          "percentOfMaxHp": 0.085
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_009",
+      "effectName": "嗜血抄手",
+      "description": "获得6%吸血效果",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 6,
+          "baseValue": 0.06
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_010",
+      "effectName": "以体为攻",
+      "description": "获得10%最大生命值攻击力",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 21,
+          "percentOfMaxHp": 0.1
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_011",
+      "effectName": "乘势追击",
+      "description": "获得20%当前攻击力数值的攻击力",
+      "trigger": 12,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 22,
+          "percentOfAttack": 0.2
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_012",
+      "effectName": "猎杀追步",
+      "description": "获得 40% 移动速度与 15% 攻击速度",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 2,
+          "percentOfMoveSpeed": 0.4
+        },
+        {
+          "action": 1,
+          "baseValue": 0.15
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_013",
+      "effectName": "翻滚爆破",
+      "description": "闪避引发爆炸，造成160%攻击力的伤害",
+      "trigger": 10,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 41,
+          "percentOfAttack": 1.6,
+          "radius": 3
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_014",
+      "effectName": "破防利刃",
+      "description": "你的攻击造成额外 12% 最终伤害",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 37,
+          "baseValue": 0.12
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_100",
+      "effectName": "暴击汲取",
+      "description": "获得15%暴击几率和12%吸血",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 7,
+          "baseValue": 0.15
+        },
+        {
+          "action": 6,
+          "baseValue": 0.12
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_101",
+      "effectName": "杀戮循环",
+      "description": "击杀提供1层1%技能CDR和1%移速，受到伤害损失65%层数",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 0,
+          "stackMax": 60,
+          "stackGainPerTrigger": 1,
+          "stackTriggerEvent": "OnKill",
+          "stackToCooldownReduction": 0.01,
+          "stackToMoveSpeed": 0.01,
+          "stackLossPercent": 0.65
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_102",
+      "effectName": "暴击飞弹",
+      "description": "15%暴击几率；暴击时发射1+(2%暴击率)个飞弹，每个造成2%攻击力伤害",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 7,
+          "baseValue": 0.15
+        },
+        {
+          "action": 34,
+          "percentOfAttack": 0.02,
+          "projectileCount": 1,
+          "projectilePerPercent": 2
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_103",
+      "effectName": "飞旋回力镖",
+      "description": "每5秒向最近敌人投掷一个穿透回力镖，造成150点伤害",
+      "trigger": 11,
+      "triggerParam": 5,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 35,
+          "baseValue": 150
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_104",
+      "effectName": "铁壁杀阵",
+      "description": "击杀提供1层2%最大生命和2%防御，受到伤害损失65%层数",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 0,
+          "stackMax": 60,
+          "stackGainPerTrigger": 1,
+          "stackTriggerEvent": "OnKill",
+          "stackToMaxHp": 0.02,
+          "stackToDefend": 0.02,
+          "stackLossPercent": 0.65
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_105",
+      "effectName": "进阶升华",
+      "description": "进阶升华：获得 18% 最终伤害提升",
+      "trigger": 0,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 37,
+          "baseValue": 0.18
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_106",
+      "effectName": "庞然巨躯",
+      "description": "最大生命×2，伤害降低20%",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 3,
+          "percentOfMaxHp": 1.0
+        },
+        {
+          "action": 0,
+          "percentOfAttack": -0.2
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_107",
+      "effectName": "法力暴燃",
+      "description": "法力消耗翻倍（×2），技能伤害提升50%",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 27,
+          "percentOfAttack": 1.0
+        },
+        {
+          "action": 26,
+          "percentOfAttack": 0.5
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_108",
+      "effectName": "暴击大师",
+      "description": "获得30%暴击几率",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 7,
+          "baseValue": 0.3
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_109",
+      "effectName": "冷却精简",
+      "description": "获得20%技能冷却缩减",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 23,
+          "percentOfAttack": 0.2
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_110",
+      "effectName": "火力全开",
+      "description": "攻击造成额外35%伤害",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 37,
+          "percentOfAttack": 0.35
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_111",
+      "effectName": "连击热刀",
+      "description": "15%暴击几率；普攻暴击时获得可叠加6%攻速，至多10层",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 7,
+          "baseValue": 0.15
+        },
+        {
+          "action": 0,
+          "stackMax": 10,
+          "stackGainPerTrigger": 1,
+          "stackTriggerEvent": "OnCrit",
+          "stackToAttackSpeed": 0.06
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_112",
+      "effectName": "致命厨心",
+      "description": "暴击伤害提高150%",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 8,
+          "baseValue": 1.5
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_113",
+      "effectName": "越战越勇",
+      "description": "参与击杀后获得2秒50%移速和8%攻速",
+      "trigger": 5,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 32,
+          "percentOfMoveSpeed": 0.5,
+          "baseValue": 0.08,
+          "duration": 2
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_114",
+      "effectName": "体魄如风",
+      "description": "获得 70% 移动速度",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 2,
+          "percentOfMoveSpeed": 0.7
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_200",
+      "effectName": "武术禁断",
+      "description": "禁用所有主动技能，35%最终伤害、35%闪避冷却缩减、35%吸血",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 38
+        },
+        {
+          "action": 37,
+          "baseValue": 0.35
+        },
+        {
+          "action": 42,
+          "baseValue": 0.35
+        },
+        {
+          "action": 6,
+          "baseValue": 0.35
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_201",
+      "effectName": "以攻代守",
+      "description": "普通攻击每命中一次使技能冷却减少0.2秒",
+      "trigger": 3,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 39,
+          "baseValue": 0.2
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_202",
+      "effectName": "钢铁之躯",
+      "description": "获得35%最大生命值和25%攻击力",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 3,
+          "percentOfMaxHp": 0.35
+        },
+        {
+          "action": 0,
+          "percentOfAttack": 0.25
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_203",
+      "effectName": "冷却大师",
+      "description": "获得30%技能冷却缩减",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 23,
+          "percentOfAttack": 0.3
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_204",
+      "effectName": "重弩追加",
+      "description": "攻击时发射一个弩箭，额外造成本次攻击伤害的40%",
+      "trigger": 3,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 11,
+          "percentOfAttack": 0.4
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_205",
+      "effectName": "极速翻炒",
+      "description": "获得55%攻击速度",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 1,
+          "baseValue": 0.55
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_206",
+      "effectName": "疾风烙印",
+      "description": "10%攻速；攻击命中 +2 移速，至多 30 层，5 秒持续",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 1,
+          "baseValue": 0.1
+        },
+        {
+          "action": 0,
+          "stackGainPerTrigger": 1,
+          "stackTriggerEvent": "OnHit",
+          "stackToMoveSpeed": 2,
+          "stackRefreshDuration": 5,
+          "stackMax": 30
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_207",
+      "effectName": "闪避精通",
+      "description": "闪避技能获得50%冷却缩减",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 42,
+          "baseValue": 0.5
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_208",
+      "effectName": "斩首收割",
+      "description": "攻击处决低于(4%最大生命+5%攻击)生命的目标，回复5%最大生命",
+      "trigger": 3,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 29,
+          "percentOfMaxHp": 0.04,
+          "percentOfAttack": 0.05,
+          "healOnExecutePercent": 0.05
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_209",
+      "effectName": "破釜之刃",
+      "description": "减少 30% 最大生命值；你的攻击造成额外 25% 攻击力伤害与 30% 最终伤害",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 3,
+          "percentOfMaxHp": -0.3
+        },
+        {
+          "action": 0,
+          "percentOfAttack": 0.25
+        },
+        {
+          "action": 37,
+          "baseValue": 0.3
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_210",
+      "effectName": "无伤替补",
+      "description": "闪避使自身进入2秒免疫伤害，30秒冷却",
+      "trigger": 10,
+      "cooldown": 30,
+      "actions": [
+        {
+          "action": 30,
+          "duration": 2
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_211",
+      "effectName": "叠刀弩箭",
+      "description": "攻击提供1层10%攻速，至多6层；6层时攻击发射造成额外50攻击力的弩箭",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 0,
+          "stackMax": 6,
+          "stackGainPerTrigger": 1,
+          "stackTriggerEvent": "OnHit",
+          "stackToAttackSpeed": 0.1,
+          "stackTriggerAt": 6,
+          "stackProjectile": 50
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_212",
+      "effectName": "以伤换生",
+      "description": "攻击提供1层；达120层后，将10%伤害转化为治疗",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 0,
+          "stackMax": 120,
+          "stackGainPerTrigger": 1,
+          "stackTriggerEvent": "OnHit",
+          "stackTriggerAt": 120,
+          "stackDamageConvertToHeal": 0.1
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_213",
+      "effectName": "妙手回旋",
+      "description": "施放一个技能会返还另一个随机技能的花费，数额相当于30%原技能冷却时间",
+      "trigger": 4,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 39,
+          "percentOfAttack": 0.3
+        }
+      ]
+    },
+    {
+      "effectId": "eff_doc_214",
+      "effectName": "厚重装甲",
+      "description": "获得 35% 最大生命值，以及 35% 治疗和护盾强度",
+      "trigger": 1,
+      "cooldown": 0,
+      "actions": [
+        {
+          "action": 3,
+          "percentOfMaxHp": 0.35
+        },
+        {
+          "action": 25,
+          "percentOfAttack": 0.35
+        }
+      ]
+    }
+  ]
+}

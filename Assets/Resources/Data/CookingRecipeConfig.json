@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "killTriggerThreshold": 400,
+
+  "pipDuration": 18,
+  "pipHintIntervalMin": 1.5,
+  "pipHintIntervalMax": 3,
+  "pipHintWindow": 0.8,
+  "pipFailDebuffDuration": 30,
+  "pipFailDebuffAttackSpeed": 0.2,
+  "qualitySRatio": 0.9,
+  "qualityARatio": 0.75,
+  "qualityBRatio": 0.5,
+  "qualityPassRatio": 0.3,
+
+  "pipHintIcon": "Art/FieldCooking/hint_flip",
+  "pipBoardSprite": "Art/UI/Panel/panel_dialog",
+
+  "pipSteps": [
+    { "id": "step_wok",        "name": "起锅", "icon": "Art/FieldCooking/Wok",         "anim": "FlyIn",    "duration": 2.0, "hintCount": 0, "fallbackColor": "#8C7853", "fxIcon": "" },
+    { "id": "step_oil",        "name": "烧油", "icon": "Art/FieldCooking/Oil",         "anim": "Pour",     "duration": 2.0, "hintCount": 0, "fallbackColor": "#FFC21A", "fxIcon": "Art/FieldCooking/fx_oil" },
+    { "id": "step_ingredient", "name": "下菜", "icon": "Art/Ingredient/tomato",        "anim": "Drop",     "duration": 2.5, "hintCount": 1, "fallbackColor": "#FF8C42", "fxIcon": "Art/Ingredient/tomato" },
+    { "id": "step_stir",       "name": "翻炒", "icon": "Art/FieldCooking/wok_toss",    "anim": "Toss",     "duration": 4.0, "hintCount": 3, "fallbackColor": "#8C7853", "fxIcon": "" },
+    { "id": "step_water",      "name": "倒水", "icon": "Art/FieldCooking/water",       "anim": "Pour",     "duration": 2.0, "hintCount": 0, "fallbackColor": "#6EC6FF", "fxIcon": "Art/FieldCooking/fx_water" },
+    { "id": "step_season",     "name": "调味", "icon": "Art/Ingredient/soy_sauce",     "anim": "Sprinkle", "duration": 3.0, "hintCount": 2, "fallbackColor": "#F5F5F5", "fxIcon": "Art/FieldCooking/fx_seasoning" }
+  ],
+
+  "Recipes": [
+    {
+      "recipeId": "fc_garlic_sizzle",
+      "recipeName": "蒜香爆炒",
+      "iconPath": "Art/FieldCooking/Garlic",
+      "effectType": 1,
+      "effectValue": 12,
+      "effectDuration": 8,
+      "effectRadius": 0,
+      "dishRecipeId": "roasted_pumpkin",
+      "gameEffectIds": [ "eff_garlic_rage" ]
+    },
+    {
+      "recipeId": "fc_rapid_stir",
+      "recipeName": "快手颠勺",
+      "iconPath": "Art/FieldCooking/Wok",
+      "effectType": 2,
+      "effectValue": 0.35,
+      "effectDuration": 8,
+      "effectRadius": 0,
+      "dishRecipeId": "scrambled_eggs_tomato",
+      "gameEffectIds": [ "eff_quick_flip" ]
+    },
+    {
+      "recipeId": "fc_pepper_dash",
+      "recipeName": "辣椒冲刺",
+      "iconPath": "Art/FieldCooking/Chili",
+      "effectType": 3,
+      "effectValue": 2.5,
+      "effectDuration": 6,
+      "effectRadius": 0,
+      "dishRecipeId": "cucumber_salad",
+      "gameEffectIds": [ "eff_chili_dash" ]
+    },
+    {
+      "recipeId": "fc_oil_splash",
+      "recipeName": "油花四溅",
+      "iconPath": "Art/FieldCooking/Oil",
+      "effectType": 4,
+      "effectValue": 60,
+      "effectDuration": 0,
+      "effectRadius": 4,
+      "dishRecipeId": "roasted_pumpkin",
+      "gameEffectIds": [ "eff_oil_burst" ]
+    },
+    {
+      "recipeId": "fc_herb_soup",
+      "recipeName": "暖胃汤",
+      "iconPath": "Art/FieldCooking/Soup",
+      "effectType": 5,
+      "effectValue": 80,
+      "effectDuration": 0,
+      "effectRadius": 0,
+      "dishRecipeId": "scrambled_eggs_tomato",
+      "gameEffectIds": [ "eff_warm_soup" ]
+    },
+    {
+      "recipeId": "fc_ice_bloom",
+      "recipeName": "冰镇摆盘",
+      "iconPath": "Art/FieldCooking/Ice",
+      "effectType": 7,
+      "effectValue": 0.4,
+      "effectDuration": 5,
+      "effectRadius": 5,
+      "dishRecipeId": "cucumber_salad",
+      "gameEffectIds": [ "eff_ice_guard" ]
+    }
+  ]
+}

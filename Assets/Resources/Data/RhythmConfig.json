@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "_comment": "音游难度分级（按关卡递进选用，见 DungeonConfig.rhythmDifficultyId）。基准值来源：判定窗口=BossConfig.beatWindowMs、下落时间=RecipeConfig.fallDuration、速度=RecipeConfig.bpm；本表只提供倍率。beatWindowScale 越大判定越宽松；bpmScale 越大音符越密；fallDurationScale 越大音符下落越慢越好读。",
+  "Rhythm": {
+    "defaultDifficultyId": "normal",
+    "difficulties": [
+      { "id": "easy",   "name": "轻松", "beatWindowScale": 1.40, "bpmScale": 0.85, "fallDurationScale": 1.30 },
+      { "id": "normal", "name": "普通", "beatWindowScale": 1.00, "bpmScale": 1.00, "fallDurationScale": 1.00 },
+      { "id": "hard",   "name": "困难", "beatWindowScale": 0.75, "bpmScale": 1.15, "fallDurationScale": 0.80 },
+      { "id": "hell",   "name": "地狱", "beatWindowScale": 0.70, "bpmScale": 1.30, "fallDurationScale": 0.65 }
+    ]
+  }
+}

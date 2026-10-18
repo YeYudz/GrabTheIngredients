@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "commonSkillIds": ["com_low_hp_bonus", "com_high_hp_bonus", "com_self_low_hp_bonus", "com_kill_heal", "com_hit_mana"],
+  "Characters": [
+    {
+      "id": "chef",
+      "characterName": "大厨",
+      "description": "属性均衡的全能厨师",
+      "iconPath": "Art/CharacterIcon/chef",
+      "spriteSheetPath": "Art/Role/chef/",
+      "sequence": {
+        "pixelsPerUnit": 256,
+        "move": { "isEnabled": true, "columns": 4, "rows": 3, "frameCount": 12, "framesPerSecond": 12, "playbackSpeed": 1.5 },
+        "idle": { "isEnabled": true, "columns": 7, "rows": 7, "frameCount": 48, "framesPerSecond": 12, "playbackSpeed": 1 }
+      },
+      "maxHp": 100,
+      "attack": 10,
+      "physDef": 5,
+      "elemDef": 5,
+      "moveSpeed": 5.0,
+      "attackSpeed": 2.0,
+      "dodgeChance": 0.05,
+      "critChance": 0.05,
+      "critDamage": 1.5,
+      "physDamageBonus": 0.0,
+      "elemDamageBonus": 0.0,
+      "maxMana": 100,
+      "manaRegen": 2.0,
+      "passiveEffectId": "eff_chef_passive",
+      "skillIds": ["chef_true_dmg", "chef_execute_strikes", "chef_next_strike", "chef_defense_up", "chef_recover"],
+      "starterSkillIds": ["chef_next_strike", "chef_recover"],
+      "defaultWeaponId": "knife",
+      "buyPrice": 300,
+      "sellPrice": 0
+    },
+    {
+      "id": "pepper_girl",
+      "characterName": "椒娘",
+      "description": "高攻速脆皮，元素专精",
+      "iconPath": "Art/CharacterIcon/pepper_girl",
+      "spriteSheetPath": "Art/Role/pepper_girl/",
+      "sequence": {
+        "pixelsPerUnit": 413,
+        "pivotY": 0.535,
+        "move": { "isEnabled": true, "columns": 4, "rows": 4, "frameCount": 13, "framesPerSecond": 12, "playbackSpeed": 1.5 },
+        "idle": { "isEnabled": true, "columns": 7, "rows": 7, "frameCount": 48, "framesPerSecond": 12, "playbackSpeed": 1 }
+      },
+      "maxHp": 80,
+      "attack": 13,
+      "physDef": 2,
+      "elemDef": 3,
+      "moveSpeed": 5.5,
+      "attackSpeed": 2.6,
+      "dodgeChance": 0.1,
+      "critChance": 0.1,
+      "critDamage": 1.6,
+      "physDamageBonus": 0.0,
+      "elemDamageBonus": 0.1,
+      "maxMana": 80,
+      "manaRegen": 1.5,
+      "passiveEffectId": "eff_pepper_passive",
+      "skillIds": ["pepper_haste", "pepper_orb", "pepper_range", "pepper_dash", "pepper_aoe_slow"],
+      "starterSkillIds": [],
+      "defaultWeaponId": "pepper_gun",
+      "buyPrice": 500,
+      "sellPrice": 0
+    }
+  ]
+}
