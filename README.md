@@ -4,7 +4,7 @@
 ![C#](https://img.shields.io/badge/C%23-155%20scripts%20%2F%2031k%20lines-blue?logo=csharp)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20PC-lightgrey)
 
-> Unity 2D Roguelite 动作游戏：**波次割草 × 画中画节拍 × 音游放松**。
+> Unity 2D Roguelite 动作游戏：**波次割草 × 画中画节拍 × 音游&BOSS**。
 > 全部玩法设计、系统架构与数值平衡由个人独立开发完成。
 
 ---
@@ -15,7 +15,7 @@
 flowchart LR
     A[战前准备<br/>角色/武器/菜品/技能] --> B[波次战斗<br/>3选1升级构筑]
     B --> C[BOSS 战<br/>阶段/破韧/弱点]
-    C --> D[烹饪音游<br/>S/A/B/C 定奖励]
+    C --> D[音游<br/>S/A/B/C 定生死]
     D --> E[阶段结算]
     E -->|下一关| B
     E -->|通关/阵亡| F[局外养成<br/>合成/商店/永久升级/成就]
@@ -24,8 +24,8 @@ flowchart LR
 
 ## 特色玩法
 
-- **画中画炒菜**：战斗进行中弹出的并行小游戏，边打怪边颠勺，命中率映射菜品稀有度与局内增益，炒糊则吃"手忙脚乱"Debuff——世界不暂停，对时间语义的处理与音游互不干扰。
-- **烹饪音游 BOSS**：BOSS 血量清空并不意味着胜利，而是切入 4 轨下落式音游；判定品质决定 BOSS 生死，失败即复活重打。
+- **画中画节拍**：战斗进行中弹出的并行小游戏，边打怪边颠勺，命中率映射菜品稀有度与局内增益，炒糊则吃"手忙脚乱"Debuff——世界不暂停，对时间语义的处理与音游互不干扰。
+- **音游&BOSS**：BOSS 血量清空并不意味着胜利，而是切入 4 轨下落式音游；判定品质决定 BOSS 生死，失败即复活重打。
 - **战前构筑**：角色差异化属性 + 近战/远程 × 物理/元素武器 + 成品菜装配 + 主动技能组，装配结果实时叠加计算。
 - **局外养成**：传说菜永久入包、3 合 1 星级合成、食材出售换钱币、钱币购买永久属性、成就与图鉴系统。
 
@@ -142,22 +142,17 @@ ProjectSettings/
 2. `git clone` 本仓库后用 Unity Hub 打开项目根目录，等待首次导入；
 3. 打开 `Assets/Scenes/Boot` 场景，点击 Play 运行。
 
-## 演示视频与截图
+## 演示视频
 
 > 🎬 试玩演示视频制作中，完成后在此更新链接。
 
-<!-- 截图准备：将图片放入 Docs/Screenshots/ 目录后取消以下注释
-![核心战斗](Docs/Screenshots/battle.png)
-![画中画炒菜](Docs/Screenshots/field-cooking.png)
-![烹饪音游](Docs/Screenshots/rhythm-boss.png)
--->
 
 ## 技术栈说明
 
 - **引擎**：Unity 2022.3 LTS（UGUI、2D Animation、Tilemap）
-- **基础设施框架**：[YokiFrame](https://github.com/HinataYoki/YokiFrame)（开源，提供 FSM / EventKit / UIKit / PoolKit 基础设施）；全部玩法系统、存档工程、数据配置、数值平衡为个人独立实现
+- **基础设施框架**：[YokiFrame](https://github.com/HinataYoki/YokiFrame)（开源，提供 FSM / EventKit / UIKit / PoolKit 基础设施）；全部玩法系统、存档工程、数据配置、数值平衡为独立实现
 - **语言**：C# / JSON 数据驱动 / LitJson
 
 ## 版权说明
 
-本项目代码与美术资源仅供学习交流与个人作品展示，未经授权请勿用于商业用途。
+本项目包含AI生成内容，代码与美术资源仅供学习交流与个人作品展示，未经授权请勿用于商业用途。
