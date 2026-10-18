@@ -220,6 +220,12 @@ public class BossBattleManager : MonoSingleton<BossBattleManager>
                 int dishStar = evt.Grade == "S" ? 5 : evt.Grade == "A" ? 4 : 3;
                 ApplyRecipeBuff(recipe, evt.Quality);
                 MetaManager.Instance.AddDish(recipe.id, dishStar);
+                // 记入本局背包（状态面板「背包」页签展示本局收获）
+                if (DropManager.HasInstance)
+                    DropManager.Instance.AddRunDish(recipe.id, dishStar);
+                // 记入本阶段收获（阶段结算收获页签的成品菜物品格）
+                if (BattleStatsCollector.HasInstance)
+                    BattleStatsCollector.Instance.RecordDishReward(recipe.id, dishStar, 1);
                 BossVictory(evt.Quality, evt.Grade, evt.MaxCombo, dishStar);
                 break;
 

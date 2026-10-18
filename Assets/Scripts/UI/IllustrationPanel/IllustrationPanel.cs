@@ -28,6 +28,7 @@ namespace GameUI
 			public string Description;
 			public bool Unlocked;
 			public Category Category;
+			public int Star;           // 星级维度（仅菜品分类 1~5，其余为 0）
 		}
 
 		private readonly List<Entry> mAllEntries = new();   // 全量条目（渲染时按分类过滤）
@@ -199,18 +200,23 @@ namespace GameUI
 		{
 			if (!RecipeAtlasManager.HasInstance) return;
 			// 图鉴"菜品" = 成品菜（RecipeConfig，局外"饰品"）；画中画炒菜资源(CookingRecipeConfig)不计入
+			// 每道菜按 1~5 星各出一条，解锁口径为该星级是否曾获得（RecordStarCollected 记录）
 			foreach (var item in RecipeAtlasManager.Instance.Items)
 			{
 				if (item == null || string.IsNullOrEmpty(item.Id)) continue;
-				mAllEntries.Add(new Entry
+				for (int star = 1; star <= 5; star++)
 				{
-					Id = item.Id,
-					Name = item.Name,
-					IconPath = item.IconPath,
-					Description = item.Description,
-					Unlocked = RecipeAtlasManager.Instance.IsUnlocked(item.Id),
-					Category = Category.Dish
-				});
+					mAllEntries.Add(new Entry
+					{
+						Id = item.Id,
+						Name = $"{item.Name} ★{star}",
+						IconPath = item.IconPath,
+						Description = item.Description,
+						Unlocked = RecipeAtlasManager.Instance.IsStarCollected(item.Id, star),
+						Category = Category.Dish,
+						Star = star
+					});
+				}
 			}
 		}
 
@@ -297,15 +303,27 @@ namespace GameUI
 		private GameObject CreateGridItem(Entry e)
 		{
 			var go = mItemTemplate != null ? Instantiate(mItemTemplate, mGridContent) : CreateDefaultGridItem();
-			go.name = "IllustrationGrid_" + e.Category + "_" + e.Id;
+			go.name = "IllustrationGrid_" + e.Category + "_" + e.Id + (e.Star > 0 ? "_★" + e.Star : "");
 			go.SetActive(true);
 
-		var itemIcon = FindChild(go.transform, "ItemIcon")?.GetComponent<Image>();
+			var itemIcon = FindChild(go.transform, "ItemIcon")?.GetComponent<Image>();
 			if (itemIcon != null)
 			{
 				var icon = e.Unlocked ? LoadIcon(e.IconPath) : null;
 				itemIcon.gameObject.SetActive(icon != null);
 				if (icon != null) itemIcon.sprite = icon;
+			}
+
+			// 星级角标：仅菜品条目显示，文案/颜色代码赋值（节点由预制体搭建）
+			var starText = FindChild(go.transform, "StarText")?.GetComponent<Text>();
+			if (starText != null)
+			{
+				starText.gameObject.SetActive(e.Star > 0);
+				if (e.Star > 0)
+				{
+					starText.text = "★" + e.Star;
+					starText.color = DishRarity.GetColor(e.Star);
+				}
 			}
 
 			// UnLockText 文案由预制体编辑，代码只管显隐
@@ -341,7 +359,27 @@ namespace GameUI
 			go.GetComponent<Image>().color = new Color(0.2f, 0.24f, 0.32f);
 
 			CreateDefaultLock(go.transform);
+			CreateDefaultStar(go.transform);
 			return go;
+		}
+
+		private static void CreateDefaultStar(Transform parent)
+		{
+			var go = new GameObject("StarText", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+			var rt = (RectTransform)go.transform;
+			rt.SetParent(parent, false);
+			rt.anchorMin = new Vector2(0f, 1f);
+			rt.anchorMax = new Vector2(0f, 1f);
+			rt.pivot = new Vector2(0f, 1f);
+			rt.anchoredPosition = new Vector2(4f, -4f);
+			rt.sizeDelta = new Vector2(60f, 24f);
+			var text = go.GetComponent<Text>();
+			text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+			text.fontSize = 18;
+			text.alignment = TextAnchor.UpperLeft;
+			text.color = Color.white;
+			text.raycastTarget = false;
+			go.SetActive(false);
 		}
 
 		private static void CreateDefaultLock(Transform parent)
@@ -403,7 +441,7 @@ namespace GameUI
 			{
 				case Category.Character: data = ItemDetailFactory.ForCharacter(e.Id); break;
 				case Category.Weapon: data = ItemDetailFactory.ForWeapon(e.Id); break;
-				case Category.Dish: data = ItemDetailFactory.ForDish(e.Id); break;
+				case Category.Dish: data = ItemDetailFactory.ForDish(e.Id, e.Star); break;
 				case Category.Skill: data = ItemDetailFactory.ForSkill(e.Id); break;
 				case Category.Enemy: data = ItemDetailFactory.ForEnemy(e.Id) ?? ItemDetailFactory.ForBoss(e.Id); break;
 				case Category.Buff: data = ItemDetailFactory.ForBuff(e.Id); break;

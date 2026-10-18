@@ -66,6 +66,11 @@ public class PlayerEffectController : MonoBehaviour
     /// <summary>命中低血目标额外伤害：每目标上次触发时间（pepper 被动，baseValue=冷却秒）</summary>
     private readonly Dictionary<GameObject, float> mHitLowHpLastTime = new();
 
+    /// <summary>大厨被动（AttackOfMoveSpeed）动态同步状态：null=未装备该被动</summary>
+    private EffectActionData mMoveSpeedToAttackAction;
+    private float mMoveSpeedToAttackApplied;   // 当前已写入 BonusAttr.Attack 的加成量
+    private float mMoveSpeedToAttackLastSpeed; // 上次求值时的玩家总移速（变化检测）
+
     // ===== 被动查询累计（由带冷却/直接行为写入，供战斗管线读取） =====
     private float mCooldownReduction;
     private float mDodgeCooldownReduction;
@@ -262,6 +267,9 @@ public class PlayerEffectController : MonoBehaviour
         mOnCritProjectiles.Clear();
         mOnHitBonusOnHit = 0f;
         mHitLowHpLastTime.Clear();
+        mMoveSpeedToAttackAction = null;
+        mMoveSpeedToAttackApplied = 0f;
+        mMoveSpeedToAttackLastSpeed = 0f;
     }
 
     // ===== 被动（常驻整局） =====
@@ -303,9 +311,25 @@ public class PlayerEffectController : MonoBehaviour
             case EffectActionType.AttackOfCurrentAttack:
             case EffectActionType.AttackOfMoveSpeed:
                 {
-                    var delta = BuffEffectBonusCalculator.AttributeDelta(a, CurrentContext(), value);
-                    mPlayer.AddBonusAttribute(delta);
-                    AddAttrTotal(type, delta.Attack);
+                    if (type == EffectActionType.AttackOfMoveSpeed)
+                    {
+                        // 大厨被动：攻击加成 = 基础攻击 × 当前总移速 × 百分比，且随移速成长动态同步
+                        // （原实现按基础移速一次性快照，局内移速提升不会转化为攻击）
+                        mMoveSpeedToAttackAction = a;
+                        float percent = BuffEffectBonusCalculator.PercentValue(a);
+                        float bonus = mPlayer.BaseAttr.Attack * mPlayer.MoveSpeed * percent;
+                        mMoveSpeedToAttackApplied = bonus;
+                        mMoveSpeedToAttackLastSpeed = mPlayer.MoveSpeed;
+                        mPlayer.AddBonusAttribute(new PlayerAttribute { Attack = bonus });
+                        AddAttrTotal(type, bonus);
+                        LogKit.Log($"[效果] 厨神之心：移速 {mPlayer.MoveSpeed:F1} → 攻击加成 +{bonus:F2}");
+                    }
+                    else
+                    {
+                        var delta = BuffEffectBonusCalculator.AttributeDelta(a, CurrentContext(), value);
+                        mPlayer.AddBonusAttribute(delta);
+                        AddAttrTotal(type, delta.Attack);
+                    }
                     break;
                 }
             case EffectActionType.MaxHpBonus:
@@ -460,7 +484,8 @@ public class PlayerEffectController : MonoBehaviour
     {
         // 效果弹（重弩追加/回力镖/暴击飞弹等）命中不触发任何 OnHit 类效果：
         // 否则"弹命中→触发效果→再发弹→再命中"会形成自持/指数级连锁，直接卡死游戏
-        if (evt.FromEffectProjectile) return;
+        // 命中附加被动（如椒娘嗜辣成性）发出的展示事件同样跳过：防止"附加伤害再触发附加"自递归
+        if (evt.FromEffectProjectile || evt.FromOnHitBonus) return;
 
         // 命中附加伤害：buff8(最大生命%) / buff3(移速%) —— 直接追加到目标
         float damage = evt.Damage;
@@ -608,8 +633,19 @@ public class PlayerEffectController : MonoBehaviour
                 mHitLowHpLastTime[evt.Target] = Time.time;
 
                 float bonus = mPlayer.Attack * (a.percentOfAttack != 0f ? a.percentOfAttack : 0.5f);
-                if (enemy != null && !enemy.IsDead) enemy.TakeDamage(bonus);
-                else if (boss != null && !boss.IsDead) boss.TakeDamage(bonus, AttackType.Universal);
+                // FromOnHitBonus=true：表现层照常飘字/闪白（否则小怪无血条，额外伤害完全不可见、冷却无从验证），
+                // 但效果类订阅方跳过该事件，防止"附加伤害再触发附加"自递归
+                var bonusEvt = new GameEvents.DamageDealt
+                {
+                    Position = evt.Target.transform.position,
+                    Damage = bonus,
+                    IsCrit = false,
+                    Target = evt.Target,
+                    FromOnHitBonus = true,
+                    DamageType = evt.DamageType
+                };
+                if (enemy != null && !enemy.IsDead) { enemy.TakeDamage(bonus); EventKit.Type.Send(bonusEvt); }
+                else if (boss != null && !boss.IsDead) { boss.TakeDamage(bonus, AttackType.Universal); EventKit.Type.Send(bonusEvt); }
                 LogKit.Log($"[效果] 低血目标额外伤害 +{bonus:F0}");
             }
         }
@@ -1019,6 +1055,8 @@ public class PlayerEffectController : MonoBehaviour
     {
         if (mImmunityRemain > 0f) mImmunityRemain -= Time.deltaTime;
 
+        SyncMoveSpeedToAttack();
+
         // 层数到期丢失：先收集待移除键，再统一移除。
         // （原实现每帧 `new Dictionary<>(mStacks)` 复制一份再枚举，会持续产生 GC 分配 → 帧率抖动）
         if (mStacks.Count > 0)
@@ -1041,6 +1079,28 @@ public class PlayerEffectController : MonoBehaviour
         }
 
         UpdateConditional(Time.deltaTime);
+    }
+
+    /// <summary>
+    /// 大厨被动同步：总移速变化时按「基础攻击 × 当前总移速 × 百分比」重算攻击加成并写入差值。
+    /// 只读 MoveSpeed（该被动自身不写移速），无反馈回路；断点存档剔除走 AddAttrTotal 累计口径。
+    /// </summary>
+    private void SyncMoveSpeedToAttack()
+    {
+        if (mMoveSpeedToAttackAction == null || mPlayer == null) return;
+        float cur = mPlayer.MoveSpeed;
+        if (Mathf.Approximately(cur, mMoveSpeedToAttackLastSpeed)) return;
+
+        mMoveSpeedToAttackLastSpeed = cur;
+        float percent = BuffEffectBonusCalculator.PercentValue(mMoveSpeedToAttackAction);
+        float bonus = mPlayer.BaseAttr.Attack * cur * percent;
+        float delta = bonus - mMoveSpeedToAttackApplied;
+        if (Mathf.Approximately(delta, 0f)) return;
+
+        mMoveSpeedToAttackApplied = bonus;
+        mPlayer.AddBonusAttribute(new PlayerAttribute { Attack = delta });
+        AddAttrTotal(EffectActionType.AttackOfMoveSpeed, delta);
+        LogKit.Log($"[效果] 厨神之心同步：移速 {cur:F1} → 攻击加成 +{bonus:F2}");
     }
 
     private void UpdateConditional(float dt)

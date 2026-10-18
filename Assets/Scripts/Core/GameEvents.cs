@@ -33,6 +33,7 @@ namespace GameEvents
         public bool IsCrit;
         public GameObject Target; // 受击目标（用于闪白），可为空
         public bool FromEffectProjectile; // 是否来自效果弹（升级Buff/技能效果发射的弩箭等）：效果弹命中不再触发 OnHit 类效果，防止"弹触发弹"无限连锁
+        public bool FromOnHitBonus;       // 是否来自命中附加被动（如椒娘嗜辣成性）：仅供表现层展示飘字/闪白，效果类订阅方跳过防止自触发
         public DamageType DamageType; // 物理/元素（飘字配色区分用，默认 Physical）
     }
 
@@ -211,4 +212,7 @@ namespace GameEvents
 
     /// <summary>成品菜谱解锁（MetaManager.UnlockRecipe 上报，图鉴标记 + 成就收集条件）</summary>
     public struct RecipeUnlocked { public string RecipeId; }
+
+    /// <summary>成品菜入局外背包（MetaManager.AddDish 上报，图鉴按星级收集：炒菜产出/合成/商店等统一入口）</summary>
+    public struct DishCollected { public string RecipeId; public int Star; }
 }

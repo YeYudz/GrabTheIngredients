@@ -18,6 +18,7 @@ public class BattleStatsCollector : MonoSingleton<BattleStatsCollector>
     private int mStageWavesCleared;
     private int mStageFieldCookCount;
     private readonly Dictionary<string, int> mStageIngredients = new();
+    private readonly Dictionary<string, DishStack> mStageDishes = new(); // key = recipeId|star（画中画/BOSS 音游入包成品菜）
     private string mBossQuality = "";          // 本阶段 BOSS 音游总评档位（S/A/B/C）
     private readonly List<string> mStageRewards = new(); // 本阶段收获（解锁菜谱/稀有食材/入背包/永久Buff）
     private readonly List<string> mFieldCookRewards = new(); // 本阶段画中画炒菜收获（入包成品菜，BOSS 结算时并入 Rewards）
@@ -139,6 +140,7 @@ public class BattleStatsCollector : MonoSingleton<BattleStatsCollector>
         mStageWavesCleared = 0;
         mStageFieldCookCount = 0;
         mStageIngredients.Clear();
+        mStageDishes.Clear();
         mBossQuality = "";
         mStageRewards.Clear();
         mFieldCookRewards.Clear();
@@ -158,6 +160,24 @@ public class BattleStatsCollector : MonoSingleton<BattleStatsCollector>
     public void RecordFieldCookingReward(string text)
     {
         if (!string.IsNullOrEmpty(text)) mFieldCookRewards.Add(text);
+    }
+
+    /// <summary>
+    /// 记录一次本阶段成品菜入包（画中画炒菜 / BOSS 音游共用，阶段结算收获页签的物品格数据源）。
+    /// 同菜同星聚合计数；star&lt;=0（失败/未入包）不记。
+    /// 整局成品菜不在此记账——快照直接取自 DropManager.RunDishGains（与状态面板背包同源）。
+    /// </summary>
+    public void RecordDishReward(string dishRecipeId, int star, int count = 1)
+    {
+        if (string.IsNullOrEmpty(dishRecipeId) || star <= 0 || count <= 0) return;
+        AddDish(mStageDishes, dishRecipeId, star, count);
+    }
+
+    private static void AddDish(Dictionary<string, DishStack> dict, string recipeId, int star, int count)
+    {
+        var key = $"{recipeId}|{star}";
+        if (dict.TryGetValue(key, out var stack)) stack.count += count;
+        else dict[key] = new DishStack { recipeId = recipeId, star = star, count = count };
     }
 
     // ===== 快照 =====
@@ -184,6 +204,7 @@ public class BattleStatsCollector : MonoSingleton<BattleStatsCollector>
             BossQuality = mBossQuality,
             Rewards = MergeRewards(),
             StageIngredients = SortedCopy(mStageIngredients),
+            StageDishes = SortedDishCopy(mStageDishes),
             // 属性提升（本阶段变化量）
             // 注意：绝对值属性走 Diff，比率属性（闪避/暴击/暴伤/物元加成/攻速）必须走 DiffPercent
             DeltaMaxHp = Diff(start.MaxHp, now.MaxHp),
@@ -207,7 +228,8 @@ public class BattleStatsCollector : MonoSingleton<BattleStatsCollector>
             RunFieldCookCount = mRunFieldCookCount,
             BossesDefeated = mBossesDefeated,
             MaxLevel = mMaxLevel,
-            RunIngredients = SortedCopy(mRunIngredients)
+            RunIngredients = SortedCopy(mRunIngredients),
+            RunDishes = RunDishSnapshot()
         };
     }
 
@@ -237,6 +259,40 @@ public class BattleStatsCollector : MonoSingleton<BattleStatsCollector>
         {
             if (kv.Value <= 0) continue;
             list.Add(new IngredientStack { id = kv.Key, count = kv.Value });
+        }
+        list.Sort((a, b) => b.count.CompareTo(a.count));
+        return list;
+    }
+
+    /// <summary>成品菜聚合副本（同菜同星一条，按数量降序）</summary>
+    private static List<DishStack> SortedDishCopy(Dictionary<string, DishStack> dict)
+    {
+        var list = new List<DishStack>();
+        foreach (var stack in dict.Values)
+        {
+            if (stack == null || stack.count <= 0) continue;
+            list.Add(new DishStack { recipeId = stack.recipeId, star = stack.star, count = stack.count });
+        }
+        list.Sort((a, b) => b.count.CompareTo(a.count));
+        return list;
+    }
+
+    /// <summary>
+    /// 整局成品菜收获：取自 DropManager.RunDishGains（本局炒菜记账唯一来源，与状态面板背包同源）。
+    /// 键为 "recipeId|star"（AddRunDish 写入时已聚合），这里拆回结构化条目。
+    /// </summary>
+    private static List<DishStack> RunDishSnapshot()
+    {
+        var list = new List<DishStack>();
+        if (!DropManager.HasInstance) return list;
+
+        foreach (var kv in DropManager.Instance.RunDishGains)
+        {
+            var sep = kv.Key.LastIndexOf('|');
+            if (sep <= 0) continue;
+            if (!int.TryParse(kv.Key.Substring(sep + 1), out int star)) continue;
+            if (kv.Value <= 0) continue;
+            list.Add(new DishStack { recipeId = kv.Key.Substring(0, sep), star = star, count = kv.Value });
         }
         list.Sort((a, b) => b.count.CompareTo(a.count));
         return list;
@@ -279,6 +335,7 @@ public class BattleStatsCollector : MonoSingleton<BattleStatsCollector>
             stageRewards = new List<string>(mStageRewards),
             fieldCookRewards = new List<string>(mFieldCookRewards),
             stageIngredients = SortedCopy(mStageIngredients),
+            stageDishes = SortedDishCopy(mStageDishes),
             runDamage = mRunDamage,
             runTime = mRunTime,
             runKills = mRunKills,
@@ -314,6 +371,11 @@ public class BattleStatsCollector : MonoSingleton<BattleStatsCollector>
 
         mStageIngredients.Clear();
         FillCounts(mStageIngredients, s.stageIngredients);
+
+        mStageDishes.Clear();
+        if (s.stageDishes != null)
+            foreach (var d in s.stageDishes)
+                AddDish(mStageDishes, d?.recipeId, d?.star ?? 0, d?.count ?? 0);
 
         mRunDamage = s.runDamage;
         mRunTime = s.runTime;
@@ -355,7 +417,9 @@ public class BattleStatsCollector : MonoSingleton<BattleStatsCollector>
         mMaxLevel = 0;
         mStageIngredients.Clear();
         mRunIngredients.Clear();
+        mStageDishes.Clear();
         mStageRewards.Clear();
+        mFieldCookRewards.Clear();
         mBossQuality = "";
     }
 }
@@ -376,6 +440,7 @@ public class BattleStatsSnapshot
     public string BossQuality;                       // BOSS 音游品质（死亡结算为空）
     public List<string> Rewards = new();             // 本阶段收获
     public List<IngredientStack> StageIngredients = new();
+    public List<DishStack> StageDishes = new();      // 本阶段入包成品菜（画中画/BOSS 音游）
 
     // ===== 属性提升（本阶段变化量） =====
     public float DeltaMaxHp, DeltaAttack, DeltaMoveSpeed, DeltaDodgeChance, DeltaCritChance,
@@ -394,4 +459,5 @@ public class BattleStatsSnapshot
     public int MaxLevel;
     public int RunCoins;                             // 本局结算获得钱币（局末按波次/击杀发放；由 GameManager 写入）
     public List<IngredientStack> RunIngredients = new();
+    public List<DishStack> RunDishes = new();        // 整局入包成品菜累计
 }

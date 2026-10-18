@@ -114,6 +114,15 @@ public class IngredientStack
     public int count;
 }
 
+/// <summary>成品菜堆叠（recipeId+star 聚合，LitJson 兼容：用 List 而非 Dictionary）</summary>
+[Serializable]
+public class DishStack
+{
+    public string recipeId;
+    public int star;
+    public int count;
+}
+
 /// <summary>成品菜实例（背包格子对应一个实例，instanceId 全局唯一）</summary>
 [Serializable]
 public class DishInstance

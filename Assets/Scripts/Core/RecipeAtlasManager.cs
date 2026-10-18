@@ -51,6 +51,8 @@ public class RecipeAtlasManager : MonoSingleton<RecipeAtlasManager>
             .UnRegisterWhenGameObjectDestroyed(gameObject);
         EventKit.Type.Register<GameEvents.RecipeUnlocked>(OnRecipeUnlocked)
             .UnRegisterWhenGameObjectDestroyed(gameObject);
+        EventKit.Type.Register<GameEvents.DishCollected>(OnDishCollected)
+            .UnRegisterWhenGameObjectDestroyed(gameObject);
 
         LogKit.Log($"[图鉴] 初始化：共 {TotalCount} 道成品菜");
     }
@@ -193,6 +195,10 @@ public class RecipeAtlasManager : MonoSingleton<RecipeAtlasManager>
         Flush();
     }
 
+    /// <summary>成品菜入包 → 图鉴按星级收集（炒菜产出/合成/商店等所有入包路径的统一上报点）</summary>
+    private void OnDishCollected(GameEvents.DishCollected evt)
+        => RecordStarCollected(evt.RecipeId, evt.Star);
+
     // ===== 记录接口 =====
 
     /// <summary>记录一次成功烹饪（首次烹饪自动解锁该菜品；maxCombo>0 时回写最高连招）</summary>
@@ -230,6 +236,32 @@ public class RecipeAtlasManager : MonoSingleton<RecipeAtlasManager>
         Flush();
     }
 
+    /// <summary>
+    /// 记录获得某星级的成品菜（图鉴按星级分格解锁；去重，首次收集才写盘）。
+    /// 拿到过任意星级的成品菜即视为该菜品已解锁。
+    /// </summary>
+    public void RecordStarCollected(string recipeId, int star)
+    {
+        if (string.IsNullOrEmpty(recipeId) || star < 1 || star > 5) return;
+        if (GetItem(recipeId) == null) return; // 只记录图鉴承认的成品菜（RecipeConfig）
+
+        if (!mEntries.TryGetValue(recipeId, out var entry))
+        {
+            entry = new RecipeAtlasEntry { recipeId = recipeId, source = SOURCE_BATTLEFIELD };
+            mEntries[recipeId] = entry;
+        }
+
+        if (!entry.isUnlocked) entry.isUnlocked = true;
+
+        entry.collectedStars ??= new List<int>();
+        if (entry.collectedStars.Contains(star)) return;
+        entry.collectedStars.Add(star);
+        entry.collectedStars.Sort();
+
+        RecalcCounts();
+        Flush();
+    }
+
     // ===== 查询接口（UI / 成就） =====
 
     /// <summary>图鉴条目（无记录返回 null）</summary>
@@ -239,6 +271,11 @@ public class RecipeAtlasManager : MonoSingleton<RecipeAtlasManager>
     /// <summary>菜品是否已在图鉴解锁（首次烹饪或成品菜谱解锁）</summary>
     public bool IsUnlocked(string recipeId)
         => mEntries.TryGetValue(recipeId, out var e) && e.isUnlocked;
+
+    /// <summary>某星级成品菜是否已收集过（图鉴按星级分格的解锁依据）</summary>
+    public bool IsStarCollected(string recipeId, int star)
+        => mEntries.TryGetValue(recipeId, out var e)
+           && e.collectedStars != null && e.collectedStars.Contains(star);
 
     /// <summary>取图鉴项（配置镜像）</summary>
     public AtlasItem GetItem(string recipeId)

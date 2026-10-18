@@ -62,6 +62,7 @@ public class RunSaveData
     // ===== 掉落 =====
     public float dropMultiplierBonus = 1f;// 局内拾取倍率（升级Buff）
     public List<IngredientStack> ingredientInventory = new(); // 局内食材背包
+    public List<RunDishStackSave> runDishGains = new();   // 本局炒出的成品菜（状态面板背包展示用）
     public int streakCount;               // 连杀数
     public float streakRemain;            // 连杀剩余秒
 
@@ -147,6 +148,15 @@ public class BuffPickCountSave
     public int count;
 }
 
+/// <summary>本局炒出的成品菜聚合条目（菜谱ID + 星级 → 数量；DropManager.RunDishGains 的存档形态）</summary>
+[Serializable]
+public class RunDishStackSave
+{
+    public string recipeId;
+    public int star;
+    public int count;
+}
+
 /// <summary>主动技能限时战斗修饰快照（真伤/条件增伤/击杀回血/回蓝/攻击距离）</summary>
 [Serializable]
 public class SkillModSave
@@ -198,6 +208,7 @@ public class RunStatsSave
     public List<string> stageRewards = new();
     public List<string> fieldCookRewards = new();
     public List<IngredientStack> stageIngredients = new();
+    public List<DishStack> stageDishes = new();
 
     // 整局
     public float runDamage;

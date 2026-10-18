@@ -249,6 +249,19 @@ public static class RunSaveManager
                 if (kv.Value > 0)
                     snap.ingredientInventory.Add(new IngredientStack { id = kv.Key, count = kv.Value });
             }
+            // 本局炒出的成品菜（状态面板背包展示，断点续玩后不丢）
+            foreach (var kv in dm.RunDishGains)
+            {
+                var sep = kv.Key.LastIndexOf('|');
+                if (sep <= 0) continue;
+                if (!int.TryParse(kv.Key.Substring(sep + 1), out int star)) continue;
+                snap.runDishGains.Add(new RunDishStackSave
+                {
+                    recipeId = kv.Key.Substring(0, sep),
+                    star = star,
+                    count = kv.Value
+                });
+            }
         }
 
         // 升级Buff Modifier 快照 + 复杂增益ID + 增益卡历史 + 抽取计数 + 未选完的 3 选 1
@@ -419,11 +432,11 @@ public static class RunSaveManager
             ActiveSkillSystem.Instance.RestoreCombatMods(snap.skillMods);
         }
 
-        // 6. 掉落（击杀数 / 食材背包 / 拾取倍率 / 连杀）
+        // 6. 掉落（击杀数 / 食材背包 / 拾取倍率 / 连杀 / 本局成品菜）
         if (DropManager.HasInstance)
         {
             DropManager.Instance.RestoreRun(snap.killCount, snap.ingredientInventory,
-                snap.dropMultiplierBonus, snap.streakCount, snap.streakRemain);
+                snap.dropMultiplierBonus, snap.streakCount, snap.streakRemain, snap.runDishGains);
         }
 
         // 7. 升级Buff Modifier（重算写回玩家）+ 复杂增益重放 + 增益卡历史

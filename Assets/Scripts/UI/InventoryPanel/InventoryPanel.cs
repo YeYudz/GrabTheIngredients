@@ -447,12 +447,13 @@ namespace GameUI
 			RefreshCraftUI();
 		}
 
-		/// <summary>自动添加：选第一个满足"同星同种 ≥combineRequiredCount 且非装备可用"的组合</summary>
+		/// <summary>自动添加：选第一个满足"同星同种 ≥combineRequiredCount 且非装备可用"的组合；满星（≥combineMaxStar）无法再合成，跳过</summary>
 		private void OnAutoAdd()
 		{
 			if (!MetaManager.HasInstance) return;
 			var dishes = MetaManager.Instance.GetDishInventory();
 			int required = GameDataMgr.Instance.GetCraftRules().combineRequiredCount;
+			int maxStar = GameDataMgr.Instance.GetCraftRules().combineMaxStar;
 
 			// 已装备判断：优先实例ID精确匹配，旧档回退组合
 			var equippedInstanceIds = new HashSet<string>();
@@ -471,7 +472,8 @@ namespace GameUI
 			var groups = new List<(string recipeId, int star, List<DishInstance> available)>();
 			foreach (var d in dishes)
 			{
-				if (d == null || IsEquipped(d, equippedInstanceIds, equippedCombos)) continue; // 已装备实例跳过
+				if (d == null || d.star >= maxStar) continue; // 已装备实例跳过；满星无法再合成，跳过
+				if (IsEquipped(d, equippedInstanceIds, equippedCombos)) continue;
 				var group = groups.Find(g => g.recipeId == d.recipeId && g.star == d.star);
 				if (group.available == null)
 				{

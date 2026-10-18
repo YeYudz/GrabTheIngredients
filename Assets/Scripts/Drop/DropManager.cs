@@ -19,6 +19,9 @@ public class DropManager : MonoSingleton<DropManager>
     /// <summary>食材拾取统计（供 UI 显示当前背包）</summary>
     public Dictionary<string, int> IngredientInventory { get; } = new();
 
+    /// <summary>本局炒出的成品菜（"菜谱ID|星级" → 数量；状态面板背包展示，随 Reset 清空）</summary>
+    public Dictionary<string, int> RunDishGains { get; } = new();
+
     /// <summary>当前击杀数（统计用）</summary>
     public int KillCount { get; private set; }
 
@@ -85,15 +88,16 @@ public class DropManager : MonoSingleton<DropManager>
     {
         KillCount = 0;
         IngredientInventory.Clear();
+        RunDishGains.Clear();
         StreakCount = 0;
         StreakRemainTime = 0f;
         DropMultiplierBonus = 1f;
         LogKit.Log("[DropManager] 已重置");
     }
 
-    /// <summary>断点恢复：还原击杀数/食材背包/拾取倍率/连杀</summary>
+    /// <summary>断点恢复：还原击杀数/食材背包/拾取倍率/连杀/本局成品菜</summary>
     public void RestoreRun(int kills, List<IngredientStack> inventory, float dropMultiplier,
-        int streakCount = 0, float streakRemain = 0f)
+        int streakCount = 0, float streakRemain = 0f, List<RunDishStackSave> dishGains = null)
     {
         KillCount = Mathf.Max(0, kills);
         DropMultiplierBonus = Mathf.Max(0f, dropMultiplier);
@@ -108,7 +112,28 @@ public class DropManager : MonoSingleton<DropManager>
                 IngredientInventory[s.id] = s.count;
             }
         }
-        LogKit.Log($"[DropManager] 断点恢复：击杀 {KillCount}，食材 {IngredientInventory.Count} 种，连杀 {StreakCount}");
+        RunDishGains.Clear();
+        if (dishGains != null)
+        {
+            foreach (var d in dishGains)
+            {
+                if (d == null || string.IsNullOrEmpty(d.recipeId) || d.count <= 0) continue;
+                RunDishGains[$"{d.recipeId}|{Mathf.Clamp(d.star, 1, 5)}"] = d.count;
+            }
+        }
+        LogKit.Log($"[DropManager] 断点恢复：击杀 {KillCount}，食材 {IngredientInventory.Count} 种，成品菜 {RunDishGains.Count} 种，连杀 {StreakCount}");
+    }
+
+    /// <summary>
+    /// 记录本局炒出的成品菜（画中画炒菜 / BOSS 音游结算时调用，与局外背包 AddDish 同步记账）。
+    /// 只做局内展示数据，不写入局外背包。
+    /// </summary>
+    public void AddRunDish(string recipeId, int star, int count = 1)
+    {
+        if (string.IsNullOrEmpty(recipeId) || count <= 0) return;
+        string key = $"{recipeId}|{Mathf.Clamp(star, 1, 5)}";
+        RunDishGains.TryGetValue(key, out int c);
+        RunDishGains[key] = c + count;
     }
 
     /// <summary>敌人被击杀 → 连杀 + 掉落食材 + 经验</summary>

@@ -155,6 +155,9 @@ public class ActiveSkillSystem : MonoSingleton<ActiveSkillSystem>
     /// <summary>命中事件：执行技能触发的命中附加（真伤/限次/条件增伤/命中回蓝）</summary>
     private void OnDamageDealt(GameEvents.DamageDealt evt)
     {
+        // 命中附加被动（如椒娘嗜辣成性）发出的展示事件不参与：附加伤害不应再消耗真伤/限次/条件增伤次数
+        if (evt.FromOnHitBonus) return;
+
         var player = GameManager.Instance?.Player;
         if (player == null || !player.IsAlive) return;
 
@@ -208,7 +211,10 @@ public class ActiveSkillSystem : MonoSingleton<ActiveSkillSystem>
         if (ratio < 0f) return;
         bool low = ratio < 0.5f;
         if ((mCondType == 1 && low) || (mCondType == 2 && !low))
+        {
             ApplyBonusToTarget(evt, player.Attack * mCondPct);
+            LogKit.Log($"[ActiveSkillSystem] 条件增伤触发：+{player.Attack * mCondPct:F0}（目标血量 {ratio:P0}）");
+        }
     }
 
     /// <summary>目标生命比例（-1 = 无法解析）</summary>
@@ -222,15 +228,42 @@ public class ActiveSkillSystem : MonoSingleton<ActiveSkillSystem>
         return -1f;
     }
 
-    /// <summary>把额外伤害追加到目标（直接扣血，避免再发 DamageDealt 造成递归）</summary>
+    /// <summary>
+    /// 把额外伤害追加到目标，并补发 FromOnHitBonus=true 的展示事件供表现层飘字/闪白。
+    /// 效果类订阅方（本系统 OnDamageDealt / PlayerEffectController）会跳过该事件，不会自递归；
+    /// 不补发则额外伤害完全不可见（小怪无血条，肉眼无从验证是否生效）。
+    /// </summary>
     private static void ApplyBonusToTarget(GameEvents.DamageDealt evt, float bonus)
     {
         if (bonus <= 0f || evt.Target == null) return;
         var enemy = evt.Target.GetComponent<EnemySimple>();
-        if (enemy != null && !enemy.IsDead) { enemy.TakeDamage(bonus); return; }
+        if (enemy != null)
+        {
+            if (enemy.IsDead) return;
+            enemy.TakeDamage(bonus);
+            SendBonusFeedback(evt, bonus);
+            return;
+        }
         var boss = evt.Target.GetComponent<BossHealth>();
         if (boss != null && !boss.IsDead && boss.gameObject.activeInHierarchy)
+        {
             boss.TakeDamage(bonus, AttackType.Universal);
+            SendBonusFeedback(evt, bonus);
+        }
+    }
+
+    /// <summary>补发附加伤害展示事件（小怪飘字/全体闪白；BOSS 飘字由 BossHealth 内部的 BossDamageApplied 提供）</summary>
+    private static void SendBonusFeedback(GameEvents.DamageDealt evt, float bonus)
+    {
+        EventKit.Type.Send(new GameEvents.DamageDealt
+        {
+            Position = evt.Target.transform.position,
+            Damage = bonus,
+            IsCrit = false,
+            Target = evt.Target,
+            FromOnHitBonus = true,
+            DamageType = evt.DamageType
+        });
     }
 
     /// <summary>

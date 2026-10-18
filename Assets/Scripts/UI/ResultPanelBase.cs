@@ -344,6 +344,26 @@ namespace GameUI
 			return cfg != null ? cfg.iconPath : null;
 		}
 
+		/// <summary>成品菜条目名：菜谱名 + ★星级（查不到配置时回退菜谱ID）</summary>
+		protected static string DishDisplayName(string recipeId, int star)
+		{
+			var name = recipeId;
+			if (!string.IsNullOrEmpty(recipeId))
+			{
+				var cfg = GameDataMgr.Instance.GetRecipe(recipeId);
+				if (cfg != null && !string.IsNullOrEmpty(cfg.recipeName)) name = cfg.recipeName;
+			}
+			return $"{name} ★{star}";
+		}
+
+		/// <summary>成品菜图标路径（查不到配置返回 null，图标节点自动隐藏）</summary>
+		protected static string DishIconPath(string recipeId)
+		{
+			if (string.IsNullOrEmpty(recipeId)) return null;
+			var cfg = GameDataMgr.Instance.GetRecipe(recipeId);
+			return cfg != null ? cfg.iconPath : null;
+		}
+
 		protected static string FormatTime(float seconds)
 		{
 			int t = Mathf.Max(0, Mathf.FloorToInt(seconds));

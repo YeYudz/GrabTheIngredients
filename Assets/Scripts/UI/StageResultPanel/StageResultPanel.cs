@@ -85,16 +85,23 @@ namespace GameUI
 			}
 		}
 
-		/// <summary>收获页：本阶段收集食材（物品格网格；空态用一个格子提示）</summary>
+		/// <summary>收获页：本阶段炒出的成品菜 + 收集食材（物品格网格；空态用一个格子提示）</summary>
 		private void BuildRewards(BattleStatsSnapshot s)
 		{
 			if (mRewardsContent == null) return;
 
-			if (s.StageIngredients == null || s.StageIngredients.Count == 0)
+			bool hasDishes = s.StageDishes != null && s.StageDishes.Count > 0;
+			bool hasIngredients = s.StageIngredients != null && s.StageIngredients.Count > 0;
+			if (!hasDishes && !hasIngredients)
 			{
 				AddEmptyItemCell(mRewardsContent, "（无）");
 				return;
 			}
+
+			if (hasDishes)
+				foreach (var dish in s.StageDishes)
+					AddItemCell(mRewardsContent, DishIconPath(dish.recipeId),
+						DishDisplayName(dish.recipeId, dish.star), dish.count);
 
 			foreach (var ing in s.StageIngredients)
 				AddItemCell(mRewardsContent, IngredientIconPath(ing.id), IngredientName(ing.id), ing.count);

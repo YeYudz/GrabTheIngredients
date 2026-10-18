@@ -365,6 +365,9 @@ public class MetaManager : MonoSingleton<MetaManager>
             });
         }
         LogKit.Log($"[MetaManager] 成品菜入背包: {recipeId} ★{star} ×{count}");
+
+        // 图鉴按星级收集（炒菜产出/合成/商店/GM 等所有入包路径统一在此上报）
+        EventKit.Type.Send(new GameEvents.DishCollected { RecipeId = recipeId, Star = star });
     }
 
     /// <summary>以实例库存执行同类同星合成，规则由 CraftConfig 驱动</summary>

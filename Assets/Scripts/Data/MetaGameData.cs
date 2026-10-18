@@ -26,6 +26,7 @@ public class RecipeAtlasEntry
     public int maxCombo;                     // 单次最高连招
     public long lastCookTimestamp;           // 最后烹饪时间
     public string discoveredSource = "";     // 发现来源：default / unlock / first_cook
+    public List<int> collectedStars = new(); // 曾获得过的成品菜星级（去重 1~5，图鉴按星级分格解锁依据）
 }
 
 /// <summary>烹饪全局统计（图鉴顶部展示 + 成就条件数据源）</summary>

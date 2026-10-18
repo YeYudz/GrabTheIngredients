@@ -467,7 +467,7 @@ namespace GameUI
 				}
 			}
 
-			// 成品菜：跨局持久数据，产出来自画中画炒菜与 BOSS 音游
+			// 成品菜：本局炒出的菜（画中画炒菜与 BOSS 音游结算入账 DropManager.RunDishGains）
 			bool hasDishes = RefreshBagDishes();
 
 			if (!hasIngredients && !hasDishes)
@@ -476,29 +476,24 @@ namespace GameUI
 			}
 		}
 
-		/// <summary>按 菜谱+星级 聚合追加成品菜行；返回是否存在成品菜</summary>
+		/// <summary>本局炒出的成品菜（DropManager 局内记账，非局外背包），按 菜谱+星级 追加行；返回是否存在成品菜</summary>
 		private bool RefreshBagDishes()
 		{
-			if (!MetaManager.HasInstance) return false;
-			var dishes = MetaManager.Instance.GetDishInventory();
-			if (dishes == null || dishes.Count == 0) return false;
+			if (!DropManager.HasInstance) return false;
+			var gains = DropManager.Instance.RunDishGains;
+			if (gains == null || gains.Count == 0) return false;
 
-			// 同菜同星合并为一行，显示总数量
-			var counts = new Dictionary<string, int>();
-			foreach (var d in dishes)
-			{
-				if (d == null || string.IsNullOrEmpty(d.recipeId)) continue;
-				var key = $"{d.recipeId}|{d.star}";
-				counts.TryGetValue(key, out int c);
-				counts[key] = c + 1;
-			}
-
+			// 键为 "recipeId|star"（AddRunDish 写入时已聚合），这里拆回结构化行
 			var rows = new List<(string recipeId, int star, int count)>();
-			foreach (var kv in counts)
+			foreach (var kv in gains)
 			{
 				var sep = kv.Key.LastIndexOf('|');
-				rows.Add((kv.Key.Substring(0, sep), int.Parse(kv.Key.Substring(sep + 1)), kv.Value));
+				if (sep <= 0) continue;
+				if (!int.TryParse(kv.Key.Substring(sep + 1), out int star)) continue;
+				rows.Add((kv.Key.Substring(0, sep), star, kv.Value));
 			}
+			if (rows.Count == 0) return false;
+
 			rows.Sort((a, b) =>
 			{
 				var ra = GameDataMgr.Instance.GetRecipe(a.recipeId);

@@ -330,11 +330,17 @@ public class FieldCookingEngine : MonoSingleton<FieldCookingEngine>
                 MetaManager.Instance.AddDish(recipe.dishRecipeId, dishStar, 1);
                 added = true;
 
+                // 记入本局背包（状态面板「背包」页签展示本局收获）
+                if (DropManager.HasInstance)
+                    DropManager.Instance.AddRunDish(recipe.dishRecipeId, dishStar, 1);
+
                 // 记入本阶段收获（阶段结算收获页签展示）
                 if (BattleStatsCollector.HasInstance)
                 {
                     BattleStatsCollector.Instance.RecordFieldCookingReward(
                         $"画中画炒菜：{recipe.recipeName}（{quality}）→ {recipe.dishRecipeId} ★{dishStar} 入背包");
+                    // 收获页签的成品菜物品格（阶段维度，同菜同星聚合计数）
+                    BattleStatsCollector.Instance.RecordDishReward(recipe.dishRecipeId, dishStar, 1);
                 }
             }
             if (!added) dishStar = 0; // 无映射/映射失效时不入包
