@@ -99,12 +99,12 @@ public class DropItem : MonoBehaviour
         if (sDropAtlas == null) return;
 
         // 建立忽略大小写索引：图集打包后 GetSprite 只认精确名
-        var names = new System.Collections.Generic.List<string>();
-        sDropAtlas.GetSprites(names);
-        for (int i = 0; i < names.Count; i++)
+        var sprites = new System.Collections.Generic.List<Sprite>();
+        sDropAtlas.GetSprites(sprites);
+        for (int i = 0; i < sprites.Count; i++)
         {
-            var sp = sDropAtlas.GetSprite(names[i]);
-            if (sp != null) sAtlasNameIndex[names[i].ToLowerInvariant()] = sp;
+            var sp = sprites[i];
+            if (sp != null) sAtlasNameIndex[sp.name.ToLowerInvariant()] = sp;
         }
     }
 
