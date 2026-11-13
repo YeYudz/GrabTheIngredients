@@ -43,22 +43,27 @@ git stash pop
 | Batches / Tris | 211 / 18.0k | 207 / 17.7k | 场景内容接近，两轮基本一致 ✓ |
 | **SetPass Calls** | 17（Tris 18.0k，敌种少） | **193（Tris 17.7k）→ 297（Tris 26.7k，混编后期波）** | 随敌人种类混编度暴涨，疑为无 Atlas 结构问题，见下方专项分析 |
 
-## SetPass 17 → 193/297 异常分析
+## SetPass 17 → 193/297 异常分析 ✅ 已定论：无 Atlas 结构问题，图集优化已完成
 
 三个采样点：优化前 Tris 18.0k → SetPass **17**；优化后 Tris 17.7k → SetPass **193**；优化后 Tris 26.7k → SetPass **297**（Batches 329，几乎每批一次状态切换）。
 
-**本轮优化没有改动任何渲染/材质代码**，且第二次复测仍高 → 排除「恰好截到闪白瞬间」的偶然解释。当前最大嫌疑是 **P1-16 无 SpriteAtlas 的结构性问题在后期波次的必然表现**：
+**结论已验证**：SetPass 随敌人/掉落物贴图混编度增长，根源是掉落物（9 种食材 + 经验宝石）各持独立小纹理 + 敌人 5 套独立大图，无图集时每次纹理切换即一次 SetPass。
 
-- 敌人/精英/掉落物是 **5 套独立大图**（1792×1792~2387，无图集）
-- 相机开启 CustomAxis Y 排序 → 不同贴图的怪物在渲染顺序上**交错**
-- 后期波次同屏混编 5 种敌人 → 每换一次贴图就是一次 SetPass → 混编越多 SetPass 越高
-- 优化前那张 17 SetPass 的截图，Tris 只有 18.0k——很可能是敌人种类少的早期时刻（如 wave 1 纯史莱姆，单一贴图 → SetPass 天然低）
+**已实施 SpriteAtlas 优化（2026-11-13）**：
 
-**定论方法（二选一，1 分钟）：**
-1. 用优化后版本打一局 **wave 1**（纯史莱姆），截 Stats——如果 SetPass 回落到两位数，即证明 SetPass 随「敌人种类混编度」增长、与优化代码无关
-2. Frame Debugger（Window → Analysis → Frame Debugger）在高 SetPass 帧看：是不是史莱姆/哥布林/蘑菇/精英的贴图在反复切换
+- 新建图集 `Assets/Resources/Drops`，打包 `Art/Ingredient`（9 张食材）+ `Art/Exp`（宝石）
+- `DropItem.cs`：图集优先加载（`LoadDropSprite`，含忽略大小写索引），图集缺失时自动回退 Resources.Load，UI iconPath 路径不受影响
+- **实测效果（Tris 20.8k，与优化前 26.7k 采样同量级）：**
 
-**顺带的结论**：这正好是「做 SpriteAtlas」收益的直接证据——合并贴图后 SetPass 预期能从 ~300 降到几十，这是下一个优化项的最大单点收益。
+| 指标 | 图集前（混编后期波） | 图集后 | 降幅 |
+|---|---|---|---|
+| **SetPass Calls** | 297（Tris 26.7k）/ 193（Tris 17.7k） | **13** | **↓ ~95%** |
+| **Batches** | 329 | **45**（Saved by batching 381） | **↓ ~86%** |
+| CPU main thread | — | 2.4ms（419 FPS 未锁 vsync 时刻） | — |
+
+> 简历表述参考：通过 SpriteAtlas 合并掉落物贴图并改造加载链路（图集优先 + 兜底回退），后期混编波次 SetPass 由 ~300 降至 13（↓95%）、Batches 由 ~330 降至 45（↓86%）。
+>
+> 注：敌人/角色的序列图是整张网格大图运行时 `Sprite.Create` 切分，不适配图集，未纳入本轮；敌人贴图间切换的少量 SetPass 为剩余构成，属预期。
 
 ## 测试方法备注（下次修正）
 
@@ -79,7 +84,7 @@ git stash pop
 
 ## 本轮已定位、留待后续（按优先级）
 
-1. **合批结构性问题**：全工程无 SpriteAtlas（233 张独立贴图）+ 相机 CustomAxis Y 排序 → DrawCall 随敌人/掉落数线性上升。改法：给敌人/掉落/食材建 SpriteAtlas V2（需要 Unity 编辑器操作，代码改不了）。
+1. ~~**合批结构性问题**~~ ✅ **已完成（2026-11-13）**：掉落物/宝石图集 `Drops` 已上线，SetPass 297→13、Batches 329→45（见上方专项分析）。剩余：敌人 5 套大图为运行时切图架构，如需进一步合批需改资源管线（整图本身已是单纹理，收益有限，优先级低）。
 2. **70 个动态刚体互相碰撞**：物理层 `OnCollisionStay2D` 与逻辑层 SpatialGrid 分离重复做工。可试：敌人改 Kinematic 或敌人间不互碰，Profiler 验证后决定。
 3. **音游面板**：每个音符 new GameObject + 每帧 GetComponent<TrapezoidImage> + SetVerticesDirty（`UI/CookingPanel/CookingPanel.cs:746,767`）。
 4. **每次 WaveStarted 全量断点落盘**（`SaveSystem/RunSaveManager.cs:49`）：一局 14~28 次，每次 1~5ms GC+IO 尖峰，可移到波次准备期分帧序列化。
