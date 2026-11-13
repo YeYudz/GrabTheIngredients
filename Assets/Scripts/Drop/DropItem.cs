@@ -95,7 +95,8 @@ public class DropItem : MonoBehaviour
         if (sDropAtlasLoaded) return;
         sDropAtlasLoaded = true;
 
-        sDropAtlas = Resources.Load<SpriteAtlas>("SpriteAtlases/Drops");
+        sDropAtlas = Resources.Load<SpriteAtlas>("Drops");
+        if (sDropAtlas == null) sDropAtlas = Resources.Load<SpriteAtlas>("SpriteAtlases/Drops");
         if (sDropAtlas == null) return;
 
         // 建立忽略大小写索引：图集打包后 GetSprite 只认精确名
