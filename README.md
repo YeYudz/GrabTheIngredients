@@ -65,9 +65,25 @@ stateDiagram-v2
 
 ### 5. 性能优化
 
+**架构层（前瞻设计）**
+
 - **空间网格** [SpatialGrid.cs](Assets/Scripts/Combat/SpatialGrid.cs)：索敌 / 近战 / AOE 查询从全图 O(N) 降到局部 O(k)，跨格才迁移注册；
-- **对象池** [PoolFactory](Assets/Scripts/Pool/PoolFactory.cs) + 预热：同屏上百敌人稳定帧率；
+- **对象池** [PoolFactory](Assets/Scripts/Pool/PoolFactory.cs) + 按同屏上限预热：同屏上百敌人稳定帧率，战斗中期不再因池扩容产生 Instantiate 抖动；
 - 查询列表复用、事件驱动 UI（BOSS 血条不再每帧轮询）等细节。
+
+**热点层（Profiler 定位 → A/B 实测验证）**
+
+对 wave 8~13 高峰期（同屏 70 敌人 + 大量掉落物）逐帧分析，定位并修复了下面这些真实热点，每一项都用「优化前 / 优化后 · 同场景同波次各 60 秒」的对照数据验证：
+
+| Profiler 定位到的热点 | 优化手法 | 实测结果 |
+|---|---|---|
+| **击杀链路同步落盘**：每次击杀推进成就进度 → 备份拷贝 + 校验码 + 全量 JSON 序列化 + 磁盘 IO | 脏标记合批落盘（最长 10s），成就解锁 / 暂停 / 退出时立即落盘 | GC 分配尖峰由**密集周期性**转为**稀疏**；击杀密集段连续出现的主线程尖峰消失 |
+| **命中热路径分配**：每次扣血 `GetComponent`、每次效果判定 `enum.ToString()` + 字符串比较 + 高频日志、每次 AOE `new List` | Awake 缓存身份引用；枚举比较替代字符串；查询缓冲复用（带重入保护） | 命中 / AOE 路径**零 GC** |
+| **HUD 每帧重建 Canvas**：指数 lerp 数学上永不到达 → `fillAmount` 每帧微变触发顶点重建；倒计时数字每帧写新字符串 | 平滑条收敛吸附（到阈值即停）+ 秒数变化才写 text + 缓存组件引用 | 静止画面 HUD **零重建**，`Canvas.BuildBatch` 不再持续出现 |
+| **掉落物逐次 `Resources.Load`**（一局 5000+ 次，含路径字符串分配） | 静态 Sprite 缓存（跨实例共享） | 掉落高频路径零 IO 查询 |
+| **无图集**：9 种食材图标 + 经验宝石各持独立纹理，与 5 套敌人贴图交错渲染，每次切换即一次 SetPass | `SpriteAtlas`（Drops）打包掉落物 + **图集优先加载**（图集缺失自动回退 `Resources.Load`，不影响 UI 图标路径） | **SetPass Calls 297 → 13（↓95%）**、**Batches 329 → 45（↓86%）** |
+
+> 数据说明：均为 Unity Editor 内同场景、同波次、各 60 秒的 A/B 实测；基线帧耗时受 VSync 状态影响，故以 GC 尖峰形态、SetPass / Batches 等与刷新率无关的指标作为对照依据。完整记录、实测方法与遗留项见 [PerformanceNotes.md](PerformanceNotes.md)。
 
 ### 6. 数值工程
 
