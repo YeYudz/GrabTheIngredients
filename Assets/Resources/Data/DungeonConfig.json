@@ -76,7 +76,8 @@
           "cooldownWaves": 2
         }
       ],
-      "_waveTemplate": "当前所有副本共用 14 波模板：waveId 1~7 = 阶段一，waveId 8~14 = 阶段二，阶段末波（7 / 14）为 BOSS 前置波。人数按 x1.176/波 指数递增（前段 533 只 / 后段 1660 只 = 3.11 倍），生成速度按 spawnPacing 曲线从 0.96 只/秒 递进到 3.92 只/秒，敌人属性按 waveStatGrowth 每波递增（波 14 时血量 x1.77 / 攻击 x2.01）。单局预算约 20.5 分钟、升 10 级、总敌数 2193。详见 TIPS/关卡节奏与平衡重制_v4.md。"
+      "_waveTemplate": "当前所有副本共用 14 波模板：waveId 1~7 = 阶段一，waveId 8~14 = 阶段二，阶段末波（7 / 14）为 BOSS 前置波。人数按 x1.176/波 指数递增（前段 533 只 / 后段 1660 只 = 3.11 倍），生成速度按 spawnPacing 曲线从 0.96 只/秒 递进到 3.92 只/秒，敌人属性按 waveStatGrowth 每波递增（波 14 时血量 x1.77 / 攻击 x2.01）。单局预算约 20.5 分钟、升 10 级、总敌数 2193。详见 TIPS/关卡节奏与平衡重制_v4.md。",
+      "endless": false
     },
     {
       "dungeonId": "stage_02_volcano",
@@ -147,7 +148,70 @@
           "cooldownWaves": 0
         }
       ],
-      "_waveTemplate": "当前所有副本共用 14 波模板：waveId 1~7 = 阶段一，waveId 8~14 = 阶段二，阶段末波（7 / 14）为 BOSS 前置波。人数按 x1.176/波 指数递增（前段 533 只 / 后段 1660 只 = 3.11 倍），生成速度按 spawnPacing 曲线从 0.96 只/秒 递进到 3.92 只/秒，敌人属性按 waveStatGrowth 每波递增（波 14 时血量 x1.77 / 攻击 x2.01）。单局预算约 20.5 分钟、升 10 级、总敌数 2193。详见 TIPS/关卡节奏与平衡重制_v4.md。"
+      "_waveTemplate": "当前所有副本共用 14 波模板：waveId 1~7 = 阶段一，waveId 8~14 = 阶段二，阶段末波（7 / 14）为 BOSS 前置波。人数按 x1.176/波 指数递增（前段 533 只 / 后段 1660 只 = 3.11 倍），生成速度按 spawnPacing 曲线从 0.96 只/秒 递进到 3.92 只/秒，敌人属性按 waveStatGrowth 每波递增（波 14 时血量 x1.77 / 攻击 x2.01）。单局预算约 20.5 分钟、升 10 级、总敌数 2193。详见 TIPS/关卡节奏与平衡重制_v4.md。",
+      "endless": false
+    },
+    {
+      "dungeonId": "dungeon_endless",
+      "dungeonName": "无尽试炼",
+      "iconPath": "",
+      "BackGround": "Art/Scene/BG_Battle3",
+      "info": "波次无限循环的试炼场：每打完一轮（全部阶段）敌人属性与 BOSS 血量全面提升，死亡即结算，挑战你的极限轮数。",
+      "enemyOverview": "果冻史莱姆 / 菜刀哥布林 / 爆炸蘑菇 / 精英·果冻史莱姆 / 精英·菜刀哥布林（属性随轮数递增）",
+      "tip": "波次没有尽头，敌人每轮都会更强；存活越久，结算的波数与钱币越多。",
+      "order": 3,
+      "isUnlocked": false,
+      "endless": true,
+      "enemyHpScale": 1.0,
+      "enemyDamageScale": 1.0,
+      "enemySpeedScale": 1.0,
+      "enemyExpScale": 1.0,
+      "dropRateScale": 1.0,
+      "fieldCookingTrigger": 0,
+      "rhythmDifficultyId": "normal",
+      "phases": [
+        {
+          "phaseId": "e1_endless_field",
+          "phaseName": "无尽外围",
+          "waveIds": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "bossId": "pumpkin_king",
+          "bossHpScale": 1.0
+        },
+        {
+          "phaseId": "e2_endless_core",
+          "phaseName": "无尽深处",
+          "waveIds": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "bossId": "pumpkin_king",
+          "bossHpScale": 1.3
+        }
+      ],
+      "eventSlots": [
+        {
+          "eventId": "endless_cook_01",
+          "kind": 0,
+          "probability": 0.4,
+          "minWave": 2,
+          "maxWave": 999999,
+          "oncePerDungeon": false,
+          "cooldownWaves": 2
+        }
+      ]
     }
   ]
 }

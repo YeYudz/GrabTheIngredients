@@ -364,7 +364,7 @@ public class BossBattleManager : MonoSingleton<BossBattleManager>
         // 只有旧模式（无 phases）才回落到 isFinal。
         bool isFinal;
         if (WaveManager.HasInstance && WaveManager.Instance.IsPhaseMode)
-            isFinal = !WaveManager.Instance.HasNextPhase();
+            isFinal = !WaveManager.Instance.IsEndless && !WaveManager.Instance.HasNextPhase();
         else
             isFinal = bossConfig != null && bossConfig.isFinal;
 

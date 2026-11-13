@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "_comment": "无尽模式配置：波次无限循环的试炼副本（对应 DungeonConfig 中 endless=true 的条目）。growth 为轮数成长倍率（每打完一轮全部阶段叠加一次，与副本难度/词缀/波次成长相乘）；startCycle 为首次开始叠加的轮数（0 起，默认 1 = 第 2 轮起递增）。bossRotation 为 BOSS 轮换池（按 轮数+阶段索引 取模；空 = 用阶段配置 bossId）。rhythmDifficulties 为音游难度档随轮递进（按轮取值，越界取最后一档；空 = 用副本 rhythmDifficultyId）。",
+  "Endless": {
+    "dungeonId": "dungeon_endless",
+    "growth": {
+      "hpPerCycle": 1.15,
+      "damagePerCycle": 1.12,
+      "expPerCycle": 1.0,
+      "dropPerCycle": 1.0,
+      "bossHpPerCycle": 1.2,
+      "startCycle": 1
+    },
+    "bossRotation": [
+      "pumpkin_king"
+    ],
+    "rhythmDifficulties": [
+      "normal",
+      "hard"
+    ]
+  }
+}

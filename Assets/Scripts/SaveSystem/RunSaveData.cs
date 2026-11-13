@@ -48,6 +48,7 @@ public class RunSaveData
     public string dungeonId;              // 本局所在副本
     public int phaseIndex;                // 当前阶段索引（0 起）
     public int waveIndex = 1;             // 当前波次（当前阶段内的序号，1 起）
+    public int endlessCycle;              // 无尽模式当前轮数（0 起 = 第 1 轮；非无尽副本恒为 0，旧档缺省 0 兼容）
     public float runElapsed;              // 本局已用时长（秒，HUD 计时基准）
     public int waveState;                 // WaveState：0 Prep / 1 Spawning / 2 Clearing / 3 Boss
     public float prepRemain;              // Prep 状态剩余倒计时

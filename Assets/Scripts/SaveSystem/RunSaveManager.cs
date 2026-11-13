@@ -222,6 +222,7 @@ public static class RunSaveManager
             snap.dungeonId = wm.CurrentDungeonId;
             snap.phaseIndex = wm.CurrentPhaseIndex;
             snap.waveIndex = wm.CurrentWave;
+            snap.endlessCycle = wm.Cycle;
             snap.waveState = (int)wm.CurrentState;
             snap.prepRemain = wm.PrepRemain;
             snap.waveStartKill = wm.WaveStartKill;
@@ -651,6 +652,9 @@ public static class RunSaveManager
         var phases = dungeon?.phases;
         if (phases == null || snap.phaseIndex < 0 || snap.phaseIndex >= phases.Count) return 1f;
         float scale = phases[snap.phaseIndex]?.bossHpScale ?? 1f;
+        // 无尽模式：叠加轮数成长倍率（与 WaveManager.CurrentPhaseBossHpScale 口径一致）
+        if (dungeon.endless)
+            scale *= GameDataMgr.Instance.GetEndless()?.GetBossHpFactor(Mathf.Max(0, snap.endlessCycle)) ?? 1f;
         return scale > 0f ? scale : 1f;
     }
 }

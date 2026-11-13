@@ -57,3 +57,11 @@ crashlytics-build.properties
 
 # ===== YokiFrame workbench local state & runtime cache =====
 /.yokiframe/
+
+# ===== Personal resume (contains private info, never commit) =====
+/*.pdf
+/*.docx
+
+# ===== Local agent/tool working dirs =====
+/.trae/
+/.workbuddy/

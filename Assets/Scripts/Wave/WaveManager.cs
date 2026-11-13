@@ -55,13 +55,23 @@ public class WaveManager : MonoSingleton<WaveManager>
         ? (CurrentPhase?.waveIds?.Count ?? 0)
         : (mWaveSequence != null ? mWaveSequence.Count : (GameDataMgr.Instance.Waves?.Count ?? 0));
 
-    /// <summary>当前阶段 BOSS 血量倍率（旧模式恒为 1）</summary>
-    public float CurrentPhaseBossHpScale => CurrentPhase?.bossHpScale ?? 1f;
+    /// <summary>当前阶段 BOSS 血量倍率（旧模式恒为 1）；无尽模式下叠加轮数成长倍率</summary>
+    public float CurrentPhaseBossHpScale
+    {
+        get
+        {
+            float scale = CurrentPhase?.bossHpScale ?? 1f;
+            if (IsEndless)
+                scale *= GameDataMgr.Instance.GetEndless()?.GetBossHpFactor(Cycle) ?? 1f;
+            return scale;
+        }
+    }
 
     /// <summary>当前波次对应的全局 waveId（词缀作用域用；取不到为 0）</summary>
     public int CurrentGlobalWaveId => GetWaveConfigAt(CurrentWave)?.waveId ?? 0;
 
-    /// <summary>当前波次在本关内的累计序号（跨阶段连续递增，1 起；事件槽区间 / 成就统计使用）</summary>
+    /// <summary>当前波次在本关内的累计序号（跨阶段连续递增，1 起；事件槽区间 / 成就统计使用）。
+    /// 无尽模式下按「轮数 × 全阶段波次总数」跨轮累计，保持单调递增。</summary>
     public int DungeonWaveOrdinal
     {
         get
@@ -70,12 +80,31 @@ public class WaveManager : MonoSingleton<WaveManager>
             int sum = 0;
             for (int i = 0; i < CurrentPhaseIndex && i < mPhases.Count; i++)
                 sum += mPhases[i]?.waveIds?.Count ?? 0;
-            return sum + CurrentWave;
+            return Cycle * TotalPhaseWaves + sum + CurrentWave;
+        }
+    }
+
+    /// <summary>阶段模式下全部阶段的波次总数（无尽模式跨轮累计波号用）</summary>
+    private int TotalPhaseWaves
+    {
+        get
+        {
+            if (mPhases == null) return 0;
+            int sum = 0;
+            for (int i = 0; i < mPhases.Count; i++)
+                sum += mPhases[i]?.waveIds?.Count ?? 0;
+            return sum;
         }
     }
 
     /// <summary>当前副本ID（ApplyDungeon 时记录；断点保存/解锁判定使用）</summary>
     public string CurrentDungeonId { get; private set; }
+
+    /// <summary>是否为无尽模式副本（ApplyDungeon 按 DungeonConfig.endless 设置）</summary>
+    public bool IsEndless { get; private set; }
+
+    /// <summary>无尽模式当前轮数（0 起 = 第 1 轮；每打完全部阶段回绕时 +1）</summary>
+    public int Cycle { get; private set; }
 
     /// <summary>本波开始时的累计击杀数（波次进度条基准；断点恢复原样写回）</summary>
     public int WaveStartKill => mWaveStartKill;
@@ -183,6 +212,8 @@ public class WaveManager : MonoSingleton<WaveManager>
         IsRunning = false;
         CurrentWave = 1;
         CurrentPhaseIndex = 0;
+        IsEndless = false;
+        Cycle = 0;
         WaveTotalEnemies = 0;
         mWaveStartKill = 0;
         PrepRemain = 0f;
@@ -286,6 +317,15 @@ public class WaveManager : MonoSingleton<WaveManager>
                 LogKit.Log($"[WaveManager] 断点续玩：BOSS 已清，直接进入第 {CurrentPhaseIndex + 1} 阶段");
                 return WaveState.Prep;
             }
+            if (IsEndless)
+            {
+                // 无尽：最后阶段 BOSS 已清且结算未确认 → 回绕进下一轮（奖励已发放，不重打 BOSS）
+                CurrentPhaseIndex = 0;
+                CurrentWave = 1;
+                Cycle++;
+                LogKit.Log($"[WaveManager] 断点续玩：无尽第 {Cycle + 1} 轮开始（BOSS 已清跳过）");
+                return WaveState.Prep;
+            }
         }
         else if (HasWave(CurrentWave + 1))
         {
@@ -305,6 +345,9 @@ public class WaveManager : MonoSingleton<WaveManager>
     {
         CurrentPhaseIndex = Mathf.Max(0, snap.phaseIndex);
         CurrentWave = Mathf.Max(1, snap.waveIndex);
+        // 无尽标记与轮数：Reset 已清空，这里按存档副本配置重判标记、写回轮数
+        IsEndless = GameDataMgr.Instance.GetDungeon(snap.dungeonId)?.endless ?? false;
+        Cycle = Mathf.Max(0, snap.endlessCycle);
         mWaveStartKill = Mathf.Max(0, snap.waveStartKill);
         WaveTotalEnemies = Mathf.Max(0, snap.waveTotalEnemies);
 
@@ -364,7 +407,7 @@ public class WaveManager : MonoSingleton<WaveManager>
     /// <summary>是否存在下一个阶段（仅阶段模式有意义）</summary>
     public bool HasNextPhase() => mPhases != null && CurrentPhaseIndex + 1 < mPhases.Count;
 
-    /// <summary>进入下一阶段（阶段内波次从 1 重新开始）；已是最后阶段则停止波次</summary>
+    /// <summary>进入下一阶段（阶段内波次从 1 重新开始）；无尽模式回绕第 1 阶段并轮数 +1，其余停止波次</summary>
     public void NextPhase()
     {
         if (mPhases == null) { NextWave(); return; }
@@ -372,6 +415,16 @@ public class WaveManager : MonoSingleton<WaveManager>
         CurrentPhaseIndex++;
         if (CurrentPhaseIndex >= mPhases.Count)
         {
+            if (IsEndless)
+            {
+                // 无尽：全部阶段打完 → 回绕第 1 阶段，轮数 +1（敌人/BOSS 属性随轮数成长）
+                CurrentPhaseIndex = 0;
+                CurrentWave = 1;
+                Cycle++;
+                LogKit.Log($"[WaveManager] 无尽模式：进入第 {Cycle + 1} 轮");
+                mFsm.Change(WaveState.Prep);
+                return;
+            }
             StopWaves();
             return;
         }
@@ -379,9 +432,22 @@ public class WaveManager : MonoSingleton<WaveManager>
         mFsm.Change(WaveState.Prep);
     }
 
-    /// <summary>当前应生成的 BOSS ID：阶段模式取阶段声明的 bossId，缺省时取（末尾）BOSS 波的配置</summary>
+    /// <summary>
+    /// 当前应生成的 BOSS ID：无尽模式按轮换池（轮数+阶段索引 取模）取值；
+    /// 阶段模式取阶段声明的 bossId，缺省时取（末尾）BOSS 波的配置。
+    /// </summary>
     public string GetCurrentBossId()
     {
+        if (IsEndless)
+        {
+            var rotation = GameDataMgr.Instance.GetEndless()?.Endless?.bossRotation;
+            if (rotation != null && rotation.Count > 0)
+            {
+                int idx = Mathf.Abs(Cycle + CurrentPhaseIndex) % rotation.Count;
+                string rotated = rotation[idx];
+                if (!string.IsNullOrEmpty(rotated)) return rotated;
+            }
+        }
         if (mPhases != null)
         {
             if (!string.IsNullOrEmpty(CurrentPhase?.bossId)) return CurrentPhase.bossId;
@@ -419,6 +485,8 @@ public class WaveManager : MonoSingleton<WaveManager>
     {
         CurrentDungeonId = dungeon?.dungeonId;
         CurrentPhaseIndex = 0;
+        IsEndless = dungeon?.endless ?? false;
+        Cycle = 0;
 
         if (dungeon.HasPhases())
         {
@@ -835,9 +903,11 @@ public class WaveBossState : AbstractState<WaveState, WaveBlack>
             LogKit.Log($"[WaveManager] Boss 被击败，阶段 {mBlack.Manager.CurrentPhaseIndex + 1} / 第 {mBlack.Manager.CurrentWave} 波清空！");
 
             // 无下一阶段/下一波（最终 BOSS）→ 停止波次循环，等待结算结束回主菜单
-            bool isLast = mBlack.Manager.IsPhaseMode
-                ? !mBlack.Manager.HasNextPhase()
-                : !mBlack.Manager.HasWave(mBlack.Manager.CurrentWave + 1);
+            // 无尽模式：永不停止，阶段结算确认后由 ResumeAfterBoss 回绕进下一轮
+            bool isLast = !mBlack.Manager.IsEndless
+                && (mBlack.Manager.IsPhaseMode
+                    ? !mBlack.Manager.HasNextPhase()
+                    : !mBlack.Manager.HasWave(mBlack.Manager.CurrentWave + 1));
             if (isLast)
             {
                 mBlack.Manager.StopWaves();

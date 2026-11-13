@@ -33,6 +33,9 @@ public class GameDataMgr
     // ===== 副本配置（波次序列 + 事件槽） =====
     public DungeonConfigWrapper Dungeons;
 
+    // ===== 无尽模式配置（轮数成长 + BOSS 轮换 + 音游难度递进） =====
+    public EndlessConfigWrapper Endless;
+
     // ===== 成就配置（元游戏） =====
     public AchievementConfigWrapper Achievements;
 
@@ -95,6 +98,7 @@ public class GameDataMgr
         Buffs        = JsonMgr.Instance.LoadConfig<BuffUpgradeConfigWrapper>("BuffUpgradeConfig");
         CookingRecipes = JsonMgr.Instance.LoadConfig<CookingRecipeConfigWrapper>("CookingRecipeConfig");
         Dungeons     = JsonMgr.Instance.LoadConfig<DungeonConfigWrapper>("DungeonConfig");
+        Endless      = JsonMgr.Instance.LoadConfig<EndlessConfigWrapper>("EndlessConfig");
         Achievements = JsonMgr.Instance.LoadConfig<AchievementConfigWrapper>("AchievementConfig");
         GameEffects  = JsonMgr.Instance.LoadConfig<GameEffectConfigWrapper>("GameEffectConfig");
         EnemyModifiers = JsonMgr.Instance.LoadConfig<EnemyStatModifierWrapper>("EnemyStatModifierConfig");
@@ -165,6 +169,10 @@ public class GameDataMgr
     /// <summary>按ID取副本配置</summary>
     public DungeonConfig GetDungeon(string id)
     { EnsureConfigLoaded(); return Dungeons?.GetById(id); }
+
+    /// <summary>取无尽模式配置（缺失时返回 null，调用方按非无尽处理）</summary>
+    public EndlessConfigWrapper GetEndless()
+    { EnsureConfigLoaded(); return Endless; }
 
     /// <summary>按ID取成就配置</summary>
     public AchievementConfig GetAchievement(string id)

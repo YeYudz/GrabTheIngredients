@@ -74,6 +74,22 @@ public static class EnemyStatResolver
                 if (growth.expPerWave > 0f) scale.Exp *= Mathf.Pow(growth.expPerWave, steps);
             }
         }
+
+        // 4. 无尽模式轮数成长：每打完一轮（全部阶段回绕一次）属性再叠加一层倍率
+        //    第 1 轮（Cycle=0）为基准；与副本难度、词缀、波次成长相乘
+        if (WaveManager.HasInstance && WaveManager.Instance.IsEndless)
+        {
+            var endless = GameDataMgr.Instance.GetEndless();
+            int cycleSteps = endless?.GetGrowthSteps(WaveManager.Instance.Cycle) ?? 0;
+            if (cycleSteps > 0)
+            {
+                var g = endless.Endless.growth;
+                if (g.hpPerCycle > 1f) scale.Hp *= Mathf.Pow(g.hpPerCycle, cycleSteps);
+                if (g.damagePerCycle > 1f) scale.Damage *= Mathf.Pow(g.damagePerCycle, cycleSteps);
+                if (g.expPerCycle > 1f) scale.Exp *= Mathf.Pow(g.expPerCycle, cycleSteps);
+                if (g.dropPerCycle > 1f) scale.Drop *= Mathf.Pow(g.dropPerCycle, cycleSteps);
+            }
+        }
         return scale;
     }
 

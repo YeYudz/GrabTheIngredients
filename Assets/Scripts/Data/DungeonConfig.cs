@@ -64,6 +64,7 @@ public class DungeonConfig
     public string tip = "";                                 // 贴心小提示（选关详情展示）
     public int order = 1;                                   // 副本序号（难度递增参考）
     public bool isUnlocked = false;                         // 初始是否解锁（通常只有第一关为 true）
+    public bool endless = false;                            // 是否为无尽模式副本（波次无限循环，难度按轮递增，死亡即终局）
 
     // ===== 阶段序列（推荐配置方式） =====
     public List<DungeonPhase> phases = new();               // 阶段序列

@@ -190,7 +190,7 @@ public class RhythmEngine : MonoSingleton<RhythmEngine>
                    $"迟到宽容=+{mLateGrace * 1000f:F0}ms");
     }
 
-    /// <summary>按当前副本解析音游难度档（副本未配置则用全局默认档）</summary>
+    /// <summary>按当前副本解析音游难度档（无尽模式按轮数取递进表；副本未配置则用全局默认档）</summary>
     private RhythmDifficulty ResolveDifficulty()
     {
         var wrapper = GameDataMgr.Instance.Rhythm;
@@ -198,9 +198,24 @@ public class RhythmEngine : MonoSingleton<RhythmEngine>
 
         string dungeonId = WaveManager.HasInstance ? WaveManager.Instance.CurrentDungeonId : null;
         var dungeon = GameDataMgr.Instance.GetDungeon(dungeonId) ?? GameDataMgr.Instance.CurrentDungeon;
-        string diffId = dungeon != null && !string.IsNullOrEmpty(dungeon.rhythmDifficultyId)
-            ? dungeon.rhythmDifficultyId
-            : wrapper.Rhythm.defaultDifficultyId;
+
+        string diffId;
+        if (WaveManager.HasInstance && WaveManager.Instance.IsEndless)
+        {
+            // 无尽：难度档随轮数递进（越界取最后一档；表为空回退副本默认）
+            int cycle = WaveManager.Instance.Cycle;
+            diffId = GameDataMgr.Instance.GetEndless()?.GetRhythmDifficultyId(cycle);
+            if (string.IsNullOrEmpty(diffId))
+                diffId = dungeon != null && !string.IsNullOrEmpty(dungeon.rhythmDifficultyId)
+                    ? dungeon.rhythmDifficultyId
+                    : wrapper.Rhythm.defaultDifficultyId;
+        }
+        else
+        {
+            diffId = dungeon != null && !string.IsNullOrEmpty(dungeon.rhythmDifficultyId)
+                ? dungeon.rhythmDifficultyId
+                : wrapper.Rhythm.defaultDifficultyId;
+        }
 
         var diff = wrapper.GetDifficulty(diffId);
         if (diff == null) diff = wrapper.GetDifficulty(wrapper.Rhythm.defaultDifficultyId);
