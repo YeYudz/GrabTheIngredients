@@ -63,6 +63,30 @@ public class PlayerEffectController : MonoBehaviour
     /// <summary>受击掉层快照缓冲（独立于 mStackKeyBuffer：防事件链重入）</summary>
     private readonly List<EffectActionData> mStackLossBuffer = new();
 
+    /// <summary>AOE 查询复用缓冲（避免每次爆炸/找最近敌人 new List 分配）</summary>
+    private readonly List<EnemySimple> mQueryBuffer = new();
+
+    /// <summary>缓冲使用中标记：事件链重入时（爆炸→击杀→OnKill→再爆炸）回退临时列表，防止遍历中 Clear 抛异常</summary>
+    private bool mQueryBufferInUse;
+
+    /// <summary>获取查询缓冲：空闲时复用成员缓冲（零分配），重入时回退临时列表</summary>
+    private List<EnemySimple> AcquireQueryBuffer()
+    {
+        if (mQueryBufferInUse) return new List<EnemySimple>();
+        mQueryBufferInUse = true;
+        mQueryBuffer.Clear();
+        return mQueryBuffer;
+    }
+
+    /// <summary>归还查询缓冲</summary>
+    private void ReleaseQueryBuffer(List<EnemySimple> buffer)
+    {
+        if (ReferenceEquals(buffer, mQueryBuffer)) mQueryBufferInUse = false;
+    }
+
+    /// <summary>AutoAttack 缓存（效果弹发射热路径，避免每次 GetComponent）</summary>
+    private AutoAttack mCachedAutoAttack;
+
     /// <summary>命中低血目标额外伤害：每目标上次触发时间（pepper 被动，baseValue=冷却秒）</summary>
     private readonly Dictionary<GameObject, float> mHitLowHpLastTime = new();
 
@@ -497,8 +521,8 @@ public class PlayerEffectController : MonoBehaviour
                 target.TakeDamage(mOnHitBonusOnHit);
             }
         }
-        TriggerEvent("OnHit", evt.Position);
-        if (evt.IsCrit) TriggerEvent("OnCrit", evt.Position);
+        TriggerEvent(EffectTriggerType.OnHit, evt.Position);
+        if (evt.IsCrit) TriggerEvent(EffectTriggerType.OnCrit, evt.Position);
         // 命中叠层
         TriggerStackEvent("OnHit");
         if (evt.IsCrit)
@@ -514,38 +538,37 @@ public class PlayerEffectController : MonoBehaviour
 
     private void OnEnemyKilled(GameEvents.EnemyKilled evt)
     {
-        TriggerEvent("OnKill", evt.Position);
+        TriggerEvent(EffectTriggerType.OnKill, evt.Position);
         TriggerStackEvent("OnKill");
     }
 
     private void OnDodgePerformed(GameEvents.DodgePerformed evt)
     {
-        TriggerEvent("OnDodge", mPlayer != null ? mPlayer.transform.position : Vector3.zero);
+        TriggerEvent(EffectTriggerType.OnDodge, mPlayer != null ? mPlayer.transform.position : Vector3.zero);
     }
 
     private void OnSkillReleased(GameEvents.ActiveSkillReleased evt)
     {
-        TriggerEvent("OnSkill", mPlayer != null ? mPlayer.transform.position : Vector3.zero);
+        TriggerEvent(EffectTriggerType.OnSkill, mPlayer != null ? mPlayer.transform.position : Vector3.zero);
     }
 
     private void OnPlayerDamaged(GameEvents.PlayerDamaged evt)
     {
         if (evt.Damage <= 0f) return; // 0 伤害仅用于 HUD 刷新
-        TriggerEvent("OnDamaged", mPlayer != null ? mPlayer.transform.position : Vector3.zero);
+        TriggerEvent(EffectTriggerType.OnDamaged, mPlayer != null ? mPlayer.transform.position : Vector3.zero);
         OnDamagedStackLoss();
     }
 
-    private void TriggerEvent(string eventName, Vector3 position)
+    private void TriggerEvent(EffectTriggerType trigger, Vector3 position)
     {
         foreach (var re in mConditional)
         {
             var cfg = re.Config;
-            string trigName = ((EffectTriggerType)cfg.trigger).ToString();
-            if (trigName != eventName) continue;
+            // 直接用枚举比较（原 ToString + 字符串比较：每次命中为每个条件效果分配一个字符串）
+            if ((EffectTriggerType)cfg.trigger != trigger) continue;
             if (re.CooldownRemain > 0f) continue;
             ExecuteActions(cfg, 1f);
             if (cfg.cooldown > 0f) re.CooldownRemain = cfg.cooldown;
-            LogKit.Log($"[效果] 触发 {trigName}：{cfg.effectName}");
         }
     }
 
@@ -769,13 +792,14 @@ public class PlayerEffectController : MonoBehaviour
     private void ExplodeAroundPlayer(float damage, float radius)
     {
         if (mPlayer == null) return;
-        var list = new List<EnemySimple>();
+        var list = AcquireQueryBuffer();
         SpatialGrid.GetInRadius(mPlayer.transform.position, radius, list);
         foreach (var e in list)
         {
             if (e == null) continue;
             e.TakeDamage(damage);
         }
+        ReleaseQueryBuffer(list);
         var boss = BossHealth.Current;
         if (boss != null && !boss.IsDead && boss.gameObject.activeInHierarchy)
         {
@@ -788,7 +812,8 @@ public class PlayerEffectController : MonoBehaviour
     private void FireMissileAtNearest(float damage, string damageType)
     {
         if (mPlayer == null) return;
-        var auto = mPlayer.GetComponent<AutoAttack>();
+        if (mCachedAutoAttack == null) mCachedAutoAttack = mPlayer.GetComponent<AutoAttack>();
+        var auto = mCachedAutoAttack;
         var weapon = auto != null ? auto.GetFirstRangedWeapon() : null;
         string prefab = AssetKeys.BULLET_SEASONING;
         float speed = 10f;
@@ -816,7 +841,7 @@ public class PlayerEffectController : MonoBehaviour
     private Vector2 FindNearestEnemyDirection()
     {
         if (mPlayer == null) return Vector2.zero;
-        var list = new List<EnemySimple>();
+        var list = AcquireQueryBuffer();
         SpatialGrid.GetInRadius(mPlayer.transform.position, 20f, list);
         float minDistSq = float.MaxValue;
         Vector2 dir = Vector2.zero;
@@ -826,6 +851,7 @@ public class PlayerEffectController : MonoBehaviour
             float dsq = ((Vector2)(e.transform.position - mPlayer.transform.position)).sqrMagnitude;
             if (dsq < minDistSq) { minDistSq = dsq; dir = ((Vector2)(e.transform.position - mPlayer.transform.position)).normalized; }
         }
+        ReleaseQueryBuffer(list);
         var boss = BossHealth.Current;
         if (boss != null && !boss.IsDead && boss.gameObject.activeInHierarchy)
         {

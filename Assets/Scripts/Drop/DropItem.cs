@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.U2D;
 using YokiFrame;
 
 /// <summary>
@@ -49,14 +50,69 @@ public class DropItem : MonoBehaviour
 
     // 渲染组件与预制体原始占位外观（美术缺失时回退）
     private SpriteRenderer mRenderer;
+    private Poolable mPoolable;
     private Sprite m_defaultSprite;
     private Color m_defaultColor = Color.white;
     private Vector3 m_baseScale = Vector3.one;
+
+    /// <summary>美术图缓存（跨实例共享）：掉落物高频生成（一局 5000+ 次），
+    /// 避免每次从池取出都走 Resources.Load + 路径字符串分配</summary>
+    private static readonly System.Collections.Generic.Dictionary<string, Sprite> sArtCache = new();
+
+    // ===== 掉落物图集支持（合批优化） =====
+    // 场上同时存在多种食材/宝石掉落，每种是一张独立纹理 → 相机 Y 排序下与敌人交错渲染，
+    // 每次纹理切换一次 SetPass（实测后期波次 SetPass 高达 297）。
+    // 把 Ingredient/Exp 小图打包进 SpriteAtlas（Assets/Resources/SpriteAtlases/Drops）后，
+    // 掉落物统一使用图集纹理 → 掉落物之间零纹理切换。
+    // 图集缺失时回退 Resources.Load（未建图集/资源未迁移时功能不受影响）。
+    // ⚠ UI 面板（iconPath 配置）仍走 Resources.Load 独立纹理：小图体积小，双份打包内存代价可忽略。
+
+    private static SpriteAtlas sDropAtlas;
+    private static bool sDropAtlasLoaded;
+
+    /// <summary>图集内 sprite 名的忽略大小写索引（配置 iconPath 大小写不一致，GetSprite 是精确匹配）</summary>
+    private static readonly System.Collections.Generic.Dictionary<string, Sprite> sAtlasNameIndex = new();
+
+    private static Sprite LoadDropSprite(string basePath)
+    {
+        EnsureDropAtlas();
+
+        if (sDropAtlas != null)
+        {
+            string baseName = basePath.Substring(basePath.LastIndexOf('/') + 1);
+
+            // 精确名优先（零开销），未命中再走忽略大小写索引兜底
+            var hit = sDropAtlas.GetSprite(baseName);
+            if (hit != null) return hit;
+            if (sAtlasNameIndex.TryGetValue(baseName.ToLowerInvariant(), out var byIndex)) return byIndex;
+        }
+
+        return Resources.Load<Sprite>(basePath);
+    }
+
+    private static void EnsureDropAtlas()
+    {
+        if (sDropAtlasLoaded) return;
+        sDropAtlasLoaded = true;
+
+        sDropAtlas = Resources.Load<SpriteAtlas>("SpriteAtlases/Drops");
+        if (sDropAtlas == null) return;
+
+        // 建立忽略大小写索引：图集打包后 GetSprite 只认精确名
+        var names = new System.Collections.Generic.List<string>();
+        sDropAtlas.GetSprites(names);
+        for (int i = 0; i < names.Count; i++)
+        {
+            var sp = sDropAtlas.GetSprite(names[i]);
+            if (sp != null) sAtlasNameIndex[names[i].ToLowerInvariant()] = sp;
+        }
+    }
 
     private void Awake()
     {
         // 缓存渲染组件与预制体占位外观，供美术加载失败时回退
         mRenderer = GetComponent<SpriteRenderer>();
+        mPoolable = GetComponent<Poolable>();
         if (mRenderer != null)
         {
             m_defaultSprite = mRenderer.sprite;
@@ -107,7 +163,16 @@ public class DropItem : MonoBehaviour
     {
         if (mRenderer == null) return;
 
-        Sprite sprite = string.IsNullOrEmpty(resourcesPath) ? null : Resources.Load<Sprite>(resourcesPath);
+        // 先查静态缓存（命中即零分配），未命中才真正加载（图集优先，Resources 兜底）
+        Sprite sprite = null;
+        if (!string.IsNullOrEmpty(resourcesPath))
+        {
+            if (!sArtCache.TryGetValue(resourcesPath, out sprite) || sprite == null)
+            {
+                sprite = LoadDropSprite(resourcesPath);
+                sArtCache[resourcesPath] = sprite;
+            }
+        }
         if (sprite == null)
         {
             mRenderer.sprite = m_defaultSprite;
@@ -174,10 +239,9 @@ public class DropItem : MonoBehaviour
         }
 
         // 归还对象池
-        var poolable = GetComponent<Poolable>();
-        if (poolable != null && !string.IsNullOrEmpty(poolable.PoolKey))
+        if (mPoolable != null && !string.IsNullOrEmpty(mPoolable.PoolKey))
         {
-            PoolFactory.Release(poolable.PoolKey, gameObject);
+            PoolFactory.Release(mPoolable.PoolKey, gameObject);
         }
         else
         {

@@ -15,6 +15,16 @@ public class AchievementManager : MonoSingleton<AchievementManager>
     private readonly Queue<AchievementConfig> mPopupQueue = new();          // 解锁弹窗队列
     private int mTotalPoints;
 
+    // ===== 存档节流（性能优化） =====
+    // 高频事件（如每次击杀推进 TotalKills）若立即落盘，会触发「备份拷贝 + 校验码 + 全量 JSON 序列化 + IO」，
+    // 是割草期周期性卡顿的元凶。改为：普通进度变化只标记脏，最长 kSaveFlushInterval 秒合批写一次；
+    // 解锁成就 / 领奖 / 暂停 / 退出时立即落盘，保证关键节点不丢档。
+
+    /// <summary>普通进度变化的合批落盘间隔（秒）</summary>
+    private const float kSaveFlushInterval = 10f;
+    private bool mSaveDirty;
+    private float mNextFlushTime;
+
     /// <summary>累计成就点数</summary>
     public int TotalPoints => mTotalPoints;
 
@@ -144,7 +154,46 @@ public class AchievementManager : MonoSingleton<AchievementManager>
             }
         }
 
-        if (anyChanged || anyUnlocked) SaveProgress();
+        if (anyUnlocked)
+        {
+            SaveProgress();       // 解锁成就：立即落盘（关键节点）
+        }
+        else if (anyChanged)
+        {
+            MarkSaveDirty();      // 普通进度：合批落盘
+        }
+    }
+
+    private void Update()
+    {
+        if (mSaveDirty && Time.unscaledTime >= mNextFlushTime) FlushSave();
+    }
+
+    /// <summary>标记进度已变化，等待合批落盘</summary>
+    private void MarkSaveDirty()
+    {
+        mSaveDirty = true;
+        mNextFlushTime = Time.unscaledTime + kSaveFlushInterval;
+    }
+
+    /// <summary>立即把当前进度写入存档（如有未落盘的变化）</summary>
+    public void FlushSave()
+    {
+        if (!mSaveDirty) return;
+        mSaveDirty = false;
+        SaveProgress();
+    }
+
+    private void OnApplicationPause(bool pause)
+    {
+        if (pause) FlushSave();
+    }
+
+    /// <summary>应用退出：先落盘，再走基类的「阻止单例重建」逻辑</summary>
+    protected override void OnApplicationQuit()
+    {
+        FlushSave();
+        base.OnApplicationQuit();
     }
 
     /// <summary>目标值：收集类 targetValue >= 999 视为"收集全部"</summary>

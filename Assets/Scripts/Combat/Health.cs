@@ -10,6 +10,16 @@ public class Health : MonoBehaviour
     private float mMaxHp;
     private float mCurrentHp;
 
+    /// <summary>身份缓存（命中/死亡热路径使用；池化对象复用同一 GameObject，组件集合不变，Awake 缓存一次即可）</summary>
+    private PlayerController mCachedPlayer;
+    private EnemySimple mCachedEnemy;
+
+    private void Awake()
+    {
+        mCachedPlayer = GetComponent<PlayerController>();
+        mCachedEnemy = GetComponent<EnemySimple>();
+    }
+
     /// <summary>是否死亡</summary>
     public bool IsDead => mCurrentHp <= 0f;
 
@@ -86,7 +96,7 @@ public class Health : MonoBehaviour
     private void NotifyDamaged(float damage)
     {
         // 玩家受伤 → 通过事件通知 UI/音效（面板只订阅事件，不直接引用）
-        if (GetComponent<PlayerController>() != null)
+        if (mCachedPlayer != null)
         {
             EventKit.Type.Send(new GameEvents.PlayerDamaged
             {
@@ -100,13 +110,13 @@ public class Health : MonoBehaviour
     /// <summary>广播死亡事件</summary>
     private void BroadcastDead()
     {
-        if (GetComponent<PlayerController>() != null)
+        if (mCachedPlayer != null)
         {
             EventKit.Type.Send(new GameEvents.PlayerDied());
         }
-        else if (GetComponent<EnemySimple>() != null)
+        else if (mCachedEnemy != null)
         {
-            var enemy = GetComponent<EnemySimple>();
+            var enemy = mCachedEnemy;
             EventKit.Type.Send(new GameEvents.EnemyKilled
             {
                 EnemyId = enemy.ConfigId,

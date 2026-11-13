@@ -21,6 +21,12 @@ public static class PoolPrewarmer
     /// <summary>第一波掉落物预计产出总量的预热比例（三分之一）</summary>
     private const float kDropWaveFraction = 1f / 3f;
 
+    /// <summary>
+    /// 掉落物预热的下限（个）：中后期单波 350 杀 × 每杀 2~3 掉落，池在刷怪高峰按需扩容会掉帧，
+    /// 因此至少预热到全局同屏上限（maxAlive=70）量级，保证前中期战斗中不再触发 Instantiate。
+    /// </summary>
+    private const int kDropPrewarmFloor = 70;
+
     /// <summary>每帧最多实例化个数（分帧执行，避免加载页自身卡顿）</summary>
     private const int kInstancesPerFrame = 8;
 
@@ -104,19 +110,65 @@ public static class PoolPrewarmer
             dungeons.Add(GameDataMgr.Instance.GetDungeon(RunSaveManager.Load()?.dungeonId));
         dungeons.Remove(null);
 
-        // 1. 敌人：第一波刷怪量的一半，按预制体路径累计（去重后合并）
+        // 1. 敌人：第一波刷怪量，按预制体路径累计（去重后合并）；再按全局同屏上限放大
         foreach (var dungeon in dungeons)
             CollectEnemyJobs(dungeon, countPerPath);
 
+        // 中后期单波同屏上限（maxAlive=70）远大于第一波刷怪量（50）：
+        // 池只在刷怪高峰按需扩容会掉帧，这里按「第一波构成比例 × 同屏上限」放大预热规模
+        int firstWaveTotal = 0;
+        foreach (var pair in countPerPath) firstWaveTotal += pair.Value;
+
+        int maxAliveMax = 0;
+        foreach (var dungeon in dungeons)
+            maxAliveMax = Mathf.Max(maxAliveMax, GetMaxAliveAcrossWaves(dungeon));
+
+        float scale = (maxAliveMax > 0 && firstWaveTotal > 0)
+            ? Mathf.Max(1f, (float)maxAliveMax / firstWaveTotal)
+            : 1f;
+
         foreach (var pair in countPerPath)
         {
-            jobs.Add(new PrewarmJob { PrefabPath = pair.Key, Count = pair.Value });
+            jobs.Add(new PrewarmJob
+            {
+                PrefabPath = pair.Key,
+                Count = Mathf.CeilToInt(pair.Value * scale)
+            });
         }
 
-        // 2. 掉落物：第一波预计产出总量的三分之一
+        // 2. 掉落物：第一波预计产出总量的三分之一（下限 kDropPrewarmFloor）
         CollectDropJobs(dungeons, jobs);
 
         return jobs;
+    }
+
+    /// <summary>
+    /// 取副本所有波次的同屏存活上限最大值（wave.maxAlive<=0 时回退全局 maxAlive；未配置返回 0）
+    /// </summary>
+    private static int GetMaxAliveAcrossWaves(DungeonConfig dungeon)
+    {
+        var waves = GameDataMgr.Instance.Waves;
+        if (dungeon == null || waves == null) return 0;
+
+        int max = 0;
+
+        void Scan(List<int> ids)
+        {
+            if (ids == null) return;
+            foreach (var id in ids)
+                max = Mathf.Max(max, waves.ResolveMaxAlive(id));
+        }
+
+        if (dungeon.HasPhases())
+        {
+            foreach (var phase in dungeon.phases) Scan(phase?.waveIds);
+        }
+        else
+        {
+            Scan(dungeon.waveIds);
+        }
+
+        return max;
     }
 
     /// <summary>收集第一波敌人的预热任务：每类取刷怪量（kEnemyWaveFraction），同预制体路径累计</summary>
@@ -169,7 +221,7 @@ public static class PoolPrewarmer
             jobs.Add(new PrewarmJob
             {
                 PrefabPath = DropManager.Instance.IngredientDropPrefabPath,
-                Count = Mathf.CeilToInt(ingredientTotal * kDropWaveFraction)
+                Count = Mathf.Max(Mathf.CeilToInt(ingredientTotal * kDropWaveFraction), kDropPrewarmFloor)
             });
         }
 
@@ -178,7 +230,7 @@ public static class PoolPrewarmer
             jobs.Add(new PrewarmJob
             {
                 PrefabPath = DropManager.Instance.ExpGemPrefabPath,
-                Count = Mathf.CeilToInt(expGemTotal * kDropWaveFraction)
+                Count = Mathf.Max(Mathf.CeilToInt(expGemTotal * kDropWaveFraction), kDropPrewarmFloor)
             });
         }
     }

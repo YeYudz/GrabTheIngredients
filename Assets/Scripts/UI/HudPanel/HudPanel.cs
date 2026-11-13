@@ -356,11 +356,14 @@ namespace GameUI
 				mWaveText.text = BuildWaveText();
 		}
 
-		/// <summary>波次显示文本：阶段模式显示"阶段 N/M · 第 X 波"（X 为本关累计波次序号）</summary>
+		/// <summary>波次显示文本：阶段模式显示"阶段 N/M · 第 X 波"（X 为本关累计波次序号）；
+		/// 无尽模式显示"无尽 第 N 轮 · 第 X 波"（X 跨轮累计）</summary>
 		private string BuildWaveText()
 		{
 			if (!WaveManager.HasInstance) return "";
 			var wm = WaveManager.Instance;
+			if (wm.IsEndless)
+				return $"无尽 第 {wm.Cycle + 1} 轮 · 第 {wm.DungeonWaveOrdinal} 波";
 			return wm.IsPhaseMode
 				? $"阶段 {wm.CurrentPhaseIndex + 1}/{wm.PhaseCount} · 第 {wm.DungeonWaveOrdinal} 波"
 				: $"第 {wm.CurrentWave} 波";
@@ -561,6 +564,8 @@ namespace GameUI
 				? RosterManager.Instance.GetCurrentWeaponIds()
 				: new List<string>();
 
+			// 槽位重建：重置倒计时缓存，避免残留上一局的缓存导致数字延迟刷新
+			mWeaponCdLast.Clear();
 			for (int i = 0; i < mWeaponIcons.Count; i++)
 			{
 				if (mWeaponIcons[i] == null) continue;
@@ -622,13 +627,20 @@ namespace GameUI
 			if (!WeaponActiveSystem.HasInstance) return;
 			var system = WeaponActiveSystem.Instance;
 
+			// 倒计时数字缓存：只在秒数变化时写 text（避免 Text 每帧重建顶点）
+			while (mWeaponCdLast.Count < mWeaponIcons.Count) mWeaponCdLast.Add(-1);
+
 			for (int i = 0; i < mWeaponIcons.Count; i++)
 			{
 				var skill = system.GetSkill(i);
 				if (skill == null)   // 空槽（无武器主动）不处理
 				{
 					// 但要清掉倒计时文字，避免残留上一局的数字
-					if (i < mWeaponTexts.Count && mWeaponTexts[i] != null) mWeaponTexts[i].text = "";
+					if (i < mWeaponTexts.Count && mWeaponTexts[i] != null && mWeaponCdLast[i] != 0)
+					{
+						mWeaponCdLast[i] = 0;
+						mWeaponTexts[i].text = "";
+					}
 					continue;
 				}
 
@@ -639,18 +651,27 @@ namespace GameUI
 					mWeaponMasks[i].fillAmount = total > 0f ? Mathf.Clamp01(remain / total) : 0f;
 
 				if (i < mWeaponTexts.Count && mWeaponTexts[i] != null)
-					mWeaponTexts[i].text = remain > 0f ? Mathf.CeilToInt(remain).ToString() : "";
+				{
+					int cd = remain > 0f ? Mathf.CeilToInt(remain) : 0;
+					if (cd != mWeaponCdLast[i]) { mWeaponCdLast[i] = cd; mWeaponTexts[i].text = cd > 0 ? cd.ToString() : ""; }
+				}
 
 				// 缺蓝表现：图标半透明；空槽的 CanvasGroup 由 AssignWeaponIcons 维护，此处不处理
 				// 约束：GetSkill(i) 非空即代表该槽有主动技能，不可用 system.Count 当槽位数判断
 				if (mWeaponIcons[i] != null)
 				{
+					float targetA = system.IsManaEnough(i) ? 1f : 0.35f;
 					var c = mWeaponIcons[i].color;
-					c.a = system.IsManaEnough(i) ? 1f : 0.35f;
-					mWeaponIcons[i].color = c;
+					if (!Mathf.Approximately(c.a, targetA))
+					{
+						c.a = targetA;
+						mWeaponIcons[i].color = c;
+					}
 				}
 			}
 		}
+
+		private readonly List<int> mWeaponCdLast = new();
 
 		/// <summary>
 		/// 按战前技能组在 SkillRoot 下构建技能按钮，只负责显示与点击上报。
@@ -784,6 +805,9 @@ namespace GameUI
 		{
 			if (!ActiveSkillSystem.HasInstance) return;
 
+			// 倒计时数字缓存：只在秒数变化时写 text（避免 Text 每帧重建顶点）
+			while (mSkillCdLast.Count < mSkillTexts.Count) mSkillCdLast.Add(-1);
+
 			for (int i = 0; i < mSkillIds.Count; i++)
 			{
 				string id = mSkillIds[i];
@@ -792,10 +816,16 @@ namespace GameUI
 
 				if (i < mSkillMasks.Count && mSkillMasks[i] != null)
 					mSkillMasks[i].fillAmount = total > 0f ? Mathf.Clamp01(remain / total) : 0f;
+
 				if (i < mSkillTexts.Count && mSkillTexts[i] != null)
-					mSkillTexts[i].text = remain > 0f ? Mathf.CeilToInt(remain).ToString() : "";
+				{
+					int cd = remain > 0f ? Mathf.CeilToInt(remain) : 0;
+					if (cd != mSkillCdLast[i]) { mSkillCdLast[i] = cd; mSkillTexts[i].text = cd > 0 ? cd.ToString() : ""; }
+				}
 			}
 		}
+
+		private readonly List<int> mSkillCdLast = new();
 
 		/// <summary>清空技能列表（重建前/面板关闭时调用）</summary>
 		private void ClearSkillList()
@@ -803,6 +833,7 @@ namespace GameUI
 			mSkillIds.Clear();
 			mSkillMasks.Clear();
 			mSkillTexts.Clear();
+			mSkillCdLast.Clear();
 
 			// 销毁动态创建的节点（预制体预置的保留）
 			foreach (var node in mDynamicSkillNodes)
@@ -957,14 +988,27 @@ namespace GameUI
 		private void RefreshDodgeCooldown()
 		{
 			var player = GameManager.Instance?.Player;
-			var dodge = player != null ? player.GetComponent<DodgeSkill>() : null;
+			if (player == null) return;
+
+			// 缓存组件：每帧 GetComponent 属持续开销
+			if (mCachedDodge == null || mCachedDodge.gameObject != player.gameObject)
+				mCachedDodge = player.GetComponent<DodgeSkill>();
+			var dodge = mCachedDodge;
 			if (dodge == null) return;
 
 			if (mDodgeMask != null)
 				mDodgeMask.fillAmount = dodge.CooldownTotal > 0f ? Mathf.Clamp01(dodge.CooldownRemain / dodge.CooldownTotal) : 0f;
+
+			// 倒计时数字只在秒数变化时写 text（避免 Text 每帧重建顶点）
 			if (mDodgeText != null)
-				mDodgeText.text = dodge.CooldownRemain > 0f ? Mathf.CeilToInt(dodge.CooldownRemain).ToString() : "";
+			{
+				int cd = dodge.CooldownRemain > 0f ? Mathf.CeilToInt(dodge.CooldownRemain) : 0;
+				if (cd != mLastDodgeCd) { mLastDodgeCd = cd; mDodgeText.text = cd > 0 ? cd.ToString() : ""; }
+			}
 		}
+
+		private DodgeSkill mCachedDodge;
+		private int mLastDodgeCd = -1;
 
 		/// <summary>每帧刷新法力条（业务层 PlayerController 持有法力）</summary>
 		private void RefreshMana()
@@ -1067,8 +1111,13 @@ namespace GameUI
 			if (mTimerText == null) return;
 			float start = GameManager.Instance != null ? GameManager.Instance.RunStartTime : 0f;
 			int totalSec = Mathf.Max(0, Mathf.FloorToInt(Time.time - start));
+			// 秒数没变就不写 text：每帧写字符串会让 UGUI Text 每帧重建顶点（Canvas 整帧重建）
+			if (totalSec == mLastTimerSecond) return;
+			mLastTimerSecond = totalSec;
 			mTimerText.text = $"{totalSec / 60:00}:{totalSec % 60:00}";
 		}
+
+		private int mLastTimerSecond = -1;
 
 		// ===== 综合刷新协程（每帧） =====
 
@@ -1095,25 +1144,34 @@ namespace GameUI
 
 			RefreshShieldBar();   // 护盾目标 = 每帧实时拉取（与 ProgressBar 同策略）
 
-			mHpDisplay = Mathf.Lerp(mHpDisplay, mHpTarget, 1f - Mathf.Exp(-speed * dt));
+			// 收敛到足够近时直接吸附目标值：指数 lerp 数学上永不到达，
+			// 不吸附会让 fillAmount 每帧都有微小变化 → Image 每帧 SetVerticesDirty → HUD Canvas 永久每帧重建
+			mHpDisplay = ConvergeBar(mHpDisplay, mHpTarget, speed, dt);
 			if (mHpFill != null) mHpFill.fillAmount = mHpDisplay;
 
-			mShieldDisplay = Mathf.Lerp(mShieldDisplay, mShieldTarget, 1f - Mathf.Exp(-speed * dt));
+			mShieldDisplay = ConvergeBar(mShieldDisplay, mShieldTarget, speed, dt);
 			if (mShieldFill != null) mShieldFill.fillAmount = mShieldDisplay;
 
-			mManaDisplay = Mathf.Lerp(mManaDisplay, mManaTarget, 1f - Mathf.Exp(-speed * dt));
+			mManaDisplay = ConvergeBar(mManaDisplay, mManaTarget, speed, dt);
 			if (mManaFill != null) mManaFill.fillAmount = mManaDisplay;
 
-			mExpDisplay = Mathf.Lerp(mExpDisplay, mExpTarget, 1f - Mathf.Exp(-speed * dt));
+			mExpDisplay = ConvergeBar(mExpDisplay, mExpTarget, speed, dt);
 			if (mExpFill != null) mExpFill.fillAmount = mExpDisplay;
 
-			mBossHpDisplay = Mathf.Lerp(mBossHpDisplay, mBossHpTarget, 1f - Mathf.Exp(-speed * dt));
+			mBossHpDisplay = ConvergeBar(mBossHpDisplay, mBossHpTarget, speed, dt);
 			if (mBossHpFill != null) mBossHpFill.fillAmount = mBossHpDisplay;
 
 			// ProgressBar 目标 = 每帧实时拉取（见 RefreshProgressBar），这里只做平滑收敛
 			RefreshProgressBar();
-			mProgressDisplay = Mathf.Lerp(mProgressDisplay, mProgressTarget, 1f - Mathf.Exp(-speed * dt));
+			mProgressDisplay = ConvergeBar(mProgressDisplay, mProgressTarget, speed, dt);
 			if (mProgressBar != null) mProgressBar.fillAmount = mProgressDisplay;
+		}
+
+		/// <summary>指数收敛 + 距目标足够近时吸附（值不再变化 → 不触发 UI 重建）</summary>
+		private static float ConvergeBar(float display, float target, float speed, float dt)
+		{
+			float next = Mathf.Lerp(display, target, 1f - Mathf.Exp(-speed * dt));
+			return Mathf.Abs(next - target) < 0.0005f ? target : next;
 		}
 
 		/// <summary>
@@ -1124,11 +1182,18 @@ namespace GameUI
 		private void RefreshShieldBar()
 		{
 			var player = GameManager.Instance != null ? GameManager.Instance.Player : null;
-			var effect = player != null ? player.GetComponent<PlayerEffectController>() : null;
-			float shield = effect != null ? effect.Shield : 0f;
-			float maxHp = player != null ? player.MaxHp : 0f;
+			if (player == null) { mShieldTarget = 0f; return; }
+
+			// 缓存效果组件（每帧 GetComponent 是命中热路径外的持续开销）
+			if (mCachedShieldEffect == null || mCachedShieldEffect.gameObject != player.gameObject)
+				mCachedShieldEffect = player.GetComponent<PlayerEffectController>();
+
+			float shield = mCachedShieldEffect != null ? mCachedShieldEffect.Shield : 0f;
+			float maxHp = player.MaxHp;
 			mShieldTarget = maxHp <= 0f ? 0f : Mathf.Clamp01(shield / maxHp);
 		}
+
+		private PlayerEffectController mCachedShieldEffect;
 
 		// ===== 连杀计时条（每帧递减） =====
 
