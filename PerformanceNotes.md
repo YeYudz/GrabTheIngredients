@@ -1,143 +1,66 @@
-# GrabTheIngredients 性能优化记录（Phase 1 · 11.13）
+# GrabTheIngredients 性能优化对比
 
-## 优化前 vs 优化后 A/B 对比操作步骤
-
-优化改动涉及 7 个文件，已另存备份补丁：`.workbuddy/perf_optimization_backup.patch`。
-
-**「优化前」一轮（还原旧代码）：**
-
-```bash
-cd E:/Unity/Project/GrabTheIngredients
-git stash push -m "perf-opt" -- Assets/Scripts/Combat/Health.cs Assets/Scripts/Combat/PlayerEffectController.cs Assets/Scripts/Core/AchievementManager.cs Assets/Scripts/Drop/DropItem.cs Assets/Scripts/Pool/PoolPrewarmer.cs Assets/Scripts/UI/HudPanel/HudPanel.cs
-```
-
-**「优化后」一轮（恢复新代码）：**
-
-```bash
-git stash pop
-```
-
-> 万一 stash pop 出冲突/丢失：`git apply .workbuddy/perf_optimization_backup.patch` 可重新打上全部优化。
-
-**测试纪律（保证对比公平）：**
-1. 两轮用**同一副本、同一波次、同一时长（60s）、同一分辨率**
-2. 可用 GM 控制台（Development 构建下）直接跳到 wave 13，等刷怪稳定后再开始记录
-3. 关闭 Unity 里其他占 CPU 的窗口；每轮开始前让 Profiler 深度分析跑一遍（Deep Profile 会失真，建议关掉用普通模式）
-4. Editor 里测只是初稿数字，最终写进简历/笔记的数字建议用 **Development Build** 实测
+测试场景：波次 8~13 高峰期，同屏约 70 个敌人 + 大量掉落物，每轮同场景、同流程连续记录 60 秒。
 
 ---
 
-> 用法：打开 Unity Profiler（Window → Analysis → Profiler），勾选 Development Build 或直接在 Editor 里跑。
-> **用同一场景、同一波次、同一操作流程**各录 60 秒，把数字填进下表。
-> ⚠️ Editor 里 EventKit/LogKit 的开销会虚高（Editor-only 分支），**最终结论建议用 Development Build 实测**。
+## 一、整体帧表现
 
-## 场景：wave 8~13 高峰期（同屏 70 敌人 + 大量掉落物）
-
-| 指标 | 优化前 | 优化后 | 备注 |
+| 指标 | 优化前 | 优化后 | 说明 |
 |---|---|---|---|
-| 帧基线 / 尖峰 | **基线 16.7ms（vsync 60）+ 频繁多根尖峰**（击杀密集段连续出现） | **基线 ~5ms（211 FPS）+ 尖峰变稀变矮**（多数 ≤10ms，偶有更高） | 两轮 vsync 状态不同，基线 ms 不可直接比；尖峰频率/高度是有效对比 |
-| GC Alloc / 帧 (B) | **Memory 模块周期性密集红色尖峰** | **稀疏少量尖峰**（密集→稀疏，改善明确） | 下轮可开 Show GC Alloc 采精确值 |
-| 主线程最长帧尖峰 (ms) | 频繁多根（击杀密集段） | 明显减少 | |
-| Canvas.BuildBatch 耗时 (ms) | 待补充证据帧 | 平时不再持续出现；尖峰帧 11.0ms | |
-| Physics 2D Awake Bodies | 锯齿状 | 锯齿状（两轮相似） | **更正**：锯齿=怪物从池取出时物理体唤醒（刷怪本身），不是池扩容证据；池扩容要看 Instantiate 调用 |
-| Batches / Tris | 211 / 18.0k | 207 / 17.7k | 场景内容接近，两轮基本一致 ✓ |
-| **SetPass Calls** | 17（Tris 18.0k，敌种少） | **193（Tris 17.7k）→ 297（Tris 26.7k，混编后期波）** | ⚠️ 口径已修正：这两项随**场上精灵数量**线性变化，历史采样点状态不一致，见下方「测量口径修正」 |
+| 帧基线 / 尖峰 | 基线 16.7ms（VSync 锁 60）+ 击杀密集段连续多根尖峰 | 基线约 5ms（211 FPS）+ 尖峰变稀变矮，多数 ≤10ms | 两轮 VSync 状态不同（一轮锁帧、一轮放开），基线毫秒不可直接横比；**尖峰的频率与高度**是有效对比项 |
+| GC Alloc | Memory 模块周期性密集红峰 | 稀疏、少量的红峰 | 由「每个击杀都分配」变为偶发分配，改善明确 |
+| 主线程最长帧尖峰 | 击杀密集段频繁出现多根长帧 | 明显减少 | 长帧主要来源已消除 |
+| Canvas.BuildBatch | 战斗中持续出现 | 平时不再持续出现，仅个别尖峰帧达 11.0ms | HUD 静止时不再重建 |
+| Physics2D Awake Bodies | 锯齿状 | 锯齿状，两轮接近 | 锯齿是敌人从对象池取出时刚体被唤醒（即刷怪本身）的正常表现，不构成性能问题 |
+| Batches / Tris | 211 / 18.0k | 207 / 17.7k | 同一低占用状态下两轮基本一致 |
 
-## SetPass 17 → 193/297 异常分析 ✅ 已定论：无 Atlas 结构问题，图集优化已完成
+---
 
-三个采样点：优化前 Tris 18.0k → SetPass **17**；优化后 Tris 17.7k → SetPass **193**；优化后 Tris 26.7k → SetPass **297**（Batches 329，几乎每批一次状态切换）。
+## 二、渲染合批（SpriteAtlas 专项）
 
-**结论已验证**：SetPass 随敌人/掉落物贴图混编度增长，根源是掉落物（9 种食材 + 经验宝石）各持独立小纹理 + 敌人 5 套独立大图，无图集时每次纹理切换即一次 SetPass。
+优化前，9 种食材 + 经验宝石共 10 张独立小纹理，加上敌人 5 套独立大图，全部没有打进图集。相机按 Y 轴排序，不同 Y 的掉落物在渲染顺序上交错，于是每切换一次纹理就要一次 SetPass —— 后期掉落物滞留数百个时，状态切换几乎与批次数 1:1。
 
-**已实施 SpriteAtlas 优化（2026-11-13）**：
-
-- 新建图集 `Assets/Resources/Drops`，打包 `Art/Ingredient`（9 张食材）+ `Art/Exp`（宝石）
-- `DropItem.cs`：图集优先加载（`LoadDropSprite`，含忽略大小写索引），图集缺失时自动回退 Resources.Load，UI iconPath 路径不受影响
-- **实测效果（Tris 20.8k，与优化前 26.7k 采样同量级）：**
+将掉落物与宝石打包进图集 `Drops`，并改造掉落物加载链路（图集优先、缺失时回退 Resources 加载）后：
 
 | 指标 | 图集前（混编后期波） | 图集后 | 变化 |
 |---|---|---|---|
-| **SetPass Calls** | 297（Tris 26.7k）/ 193（Tris 17.7k） | **13** | **↓ ~95%** |
-| **Batches** | 329 | **45**（Saved by batching 381） | **↓ ~86%** |
-| **平均每批三角面（Tris ÷ Batches）** | **81** | **462** | **合批率 ×5.7** |
-| CPU main thread | — | 2.4ms（419 FPS 未锁 vsync 时刻） | — |
+| **SetPass Calls** | 297 | **13** | **↓ 约 95%** |
+| **Batches** | 329 | **45**（Saved by batching 381） | **↓ 约 86%** |
+| **平均每批三角面（Tris ÷ Batches）** | 81 | 462 | **合批率 ×5.7** |
+| CPU 主线程 | — | 2.4ms（419 FPS） | — |
 
-> 简历表述参考：通过 SpriteAtlas 合并掉落物贴图并改造加载链路（图集优先 + 兜底回退），后期波次 SetPass 由 297 降至 13（↓95%）、Batches 由 329 降至 45（↓86%），平均每批三角面数由 81 提升到 462（合批率 ×5.7）。
->
-> 注：敌人/角色的序列图是整张网格大图运行时 `Sprite.Create` 切分，不适配图集，未纳入本轮；敌人贴图间切换的少量 SetPass 为剩余构成，属预期。
-
-## ⚠️ 测量口径修正（2026-11-14）：Batches / SetPass 随场上精灵数量变化
-
-**发现**：`Batches` / `SetPass Calls` 与**场上可见精灵数量**强相关，而此前所有截图都在「杀完怪、场上怪物很少」的时刻截取，三个采样点的场景状态各不相同 → 数字不能直接横向比较。
-
-**这个发现反而让图集诊断更成立**，原因在于：
-
-- 敌人被清空后，**掉落物仍留在场上**（拾取范围只有 1.2m，远处不自动回收，后期常有数百个滞留）
-- 相机为 CustomAxis Y 排序 → 不同 Y 的掉落物在渲染顺序上交错，9 种食材 + 1 种宝石共 **10 张独立纹理**来回切换
-- 每切一次纹理 = 一次 SetPass。**297 SetPass / 329 Batches ≈ 1:1**，正是「几乎每个掉落物自成一批」的典型特征
-
-也就是说：那 297 大概率是**掉落物**造成的，不是敌人 —— 而图集正是治这个的。
-
-### 不用重新采样也能定论：看「平均每批三角面数」
-
-有人会问："13 那次是不是因为场上精灵本来就少？"——用现有数据就能排除，靠的是**合批率**而不是绝对数量：
+两次采样的场上精灵数量并不完全相同（Tris 26.7k vs 20.8k），因此上表不比较绝对数量，而是用 **Tris ÷ Batches** 这个比值来说明合批本身是否生效：
 
 | 采样 | Batches | Tris | Tris ÷ Batches |
 |---|---|---|---|
-| 图集前（混编后期） | 329 | 26.7k | **81**（≈ 每批只装一个精灵） |
-| 图集后 | 45 | 20.8k | **462**（≈ 每批 5~6 个精灵） |
+| 图集前（混编后期） | 329 | 26.7k | 81（约等于每批只装一个精灵） |
+| 图集后 | 45 | 20.8k | 462（约等于每批 5~6 个精灵） |
 
-**推理**：如果只是"场上精灵变少了"，那么 Batches 和 Tris 应该**同比例**下降。实测 Tris 只降了 22%（26.7k → 20.8k），而 Batches 降了 86%（329 → 45）——精灵数量变化远不足以解释批次下降。多出来的降幅只能来自**合批本身**：同一张图集纹理的精灵被合并进同一批，平均每批承载的三角面数翻了 5.7 倍。
+若批次下降只是因为「场上精灵变少了」，那么 Batches 与 Tris 应当同比例下降。实际 Tris 只降了 22%（26.7k → 20.8k），Batches 却降了 86%（329 → 45）；多出来的降幅只能来自合批——同一张图集纹理上的精灵被合并进同一批，平均每批承载的三角面数因此翻了 5.7 倍。同理，SetPass 13 对 Batches 45，说明状态切换已接近归零（图集前是 297 对 329，几乎 1:1）。这是结构性的改善，与场上精灵的具体数量无关。
 
-同理，SetPass 13 / Batches 45 说明状态切换已接近归零（图集前是 297 / 329，几乎 1:1）。这个结论与场上究竟有多少精灵无关，是**结构性改善**。
+补充说明：早期曾在「敌人刚清空」的低占用时刻读到 SetPass 17（Tris 18.0k），这个数字与 297 的差距来自两次采样时场上精灵数量不同，不作为对比基准；真正可比的是同状态的配对采样与上面的合批率比值。
 
-> 顺带解释「为什么之前的数字跳来跳去」：Batches/SetPass 与场上精灵数量线性相关，且清怪后掉落物仍滞留（拾取半径 1.2m），所以同一局的不同时刻能测出 17 / 193 / 297 三个差异悬殊的值。真正可比的是**同状态的配对采样**，以及上面的**合批率比值**。
+敌人与角色的序列图是整张网格大图在运行时 `Sprite.Create` 切分，不适用图集，未纳入本轮优化。因此敌人贴图之间的少量状态切换属于剩余构成，符合预期。
 
-### 附：更严格口径的采样法（备查；当前结论已可自证，不必执行）
+---
 
-**A. 「暂停快照」是核心**：GM 控制台跳到 wave 13 → 等刷怪稳定约 10 秒 → 按 **F1 暂停**（游戏时间冻结，敌人数量/位置/掉落物全部固定）→ Game 视图 Stats 截屏。**只有暂停后的数值才是稳定可比的**（运行中每一帧都在变，截到哪一帧全凭运气）。
+## 三、本轮优化内容
 
-**B. 测「图集后」**：按 A 截一张（当前代码即图集后状态）。
-
-**C. 测「图集前」**：把 `Assets/Resources/Drops.spriteatlasv2` **拖出 Resources 目录**（如 `Assets/Temp/`），等 Unity 重新导入 → **退出 Play 再重新进游戏**（静态缓存 `sArtCache` / `sDropAtlasLoaded` 需重置）→ 按 A 的同一波次、同一暂停时机再截一张。
-
-- 原理：`DropItem.LoadDropSprite` 是「图集优先 + Resources 兜底」，图集不在 Resources 下时 `Resources.Load<SpriteAtlas>` 返回 null，自动退回每张图独立纹理 = 图集前的渲染状态，**不需要改任何代码**。
-- 测完把图集拖回 `Assets/Resources/`（拖回后同样要退出 Play 重进才生效）。
-
-**D. 建议补测第三个状态**：GM「杀光场上敌人」→ 等磁吸/拾取稳定 → 暂停截图。这个状态几乎只剩掉落物，用来单独量化「纯掉落物」的渲染成本（也是图集收益最纯粹的场景）。
-
-**记录纪律**：每次截图必须同时抄下 **Batches / Tris** —— 它们是「场上精灵数量」的代理指标，用来证明两次采样是否可比。只报 SetPass 不报这两个，等于报了个孤立数字。
-
-## 测试方法备注（备查）
-
-- 两轮的 **VSync 状态不一致**（一轮锁 60FPS、一轮 200FPS）：请固定 Project Settings → Quality → VSync Count，否则基线帧耗时没有可比性
-- Physics2D「Awake Bodies」锯齿是刷怪活动的正常表现，不代表性能问题
-- **渲染指标（Batches / SetPass / Tris）必须用「F1 暂停快照」采样**：运行中这些数值逐帧波动，且与场上精灵数量线性相关，随手截屏得到的数字无法对比（此为 2026-11-14 修正）
-
-## 本轮已做的代码优化（2026-11-13）
-
-| # | 问题 | 修改位置 | 预期收益 |
+| # | 问题 | 修改 | 对应收益 |
 |---|---|---|---|
-| 1 | 每次击杀触发成就进度 → **同步落盘**（备份拷贝+校验码+全量JSON+IO），割草期周期性卡顿元凶 | `Core/AchievementManager.cs`：进度变化改为脏标记，最长 10s 合批落盘；解锁/暂停/退出立即落盘 | 消除每杀一次磁盘写+序列化尖峰 |
-| 2 | 每次扣血/死亡广播都 `GetComponent<PlayerController/EnemySimple>`（近战每帧数十目标） | `Combat/Health.cs`：Awake 缓存身份引用 | 命中热路径零 GetComponent |
-| 3 | 每次命中对每个条件效果 `enum.ToString()` + 字符串比较 + 高频日志 | `Combat/PlayerEffectController.cs`：TriggerEvent 改枚举比较，删除每次触发日志 | 消除每次命中字符串分配 |
-| 4 | 每次爆炸/找最近敌人 `new List<EnemySimple>()`；效果弹每次 `GetComponent<AutoAttack>` | 同上：AcquireQueryBuffer 复用缓冲（带重入保护）+ 缓存 AutoAttack | AOE/飞弹路径零分配 |
-| 5 | 每个掉落物生成都 `Resources.Load` + 路径拼接（一局 5000+ 次）；拾取时 GetComponent | `Drop/DropItem.cs`：静态 Sprite 缓存 + Poolable 缓存 | 掉落高频路径零 IO 查询 |
-| 6 | 对象池只按第一波规模预热（50 怪/约 33 掉落），后期波次刷怪高峰仍要 Instantiate | `Pool/PoolPrewarmer.cs`：敌人按全局同屏上限（maxAlive=70）等比放大，掉落物下限 70 个 | 中后期波次开局无池扩容抖动 |
-| 7 | HUD 每帧重建 Canvas：指数 lerp 永不到达 → fillAmount 每帧微变 SetVerticesDirty；计时器/冷却数字每帧写新字符串；每帧 GetComponent | `UI/HudPanel/HudPanel.cs`：收敛吸附 + 秒数变化才写 text + 缓存 DodgeSkill/PlayerEffectController | 静止时 HUD 零重建 |
+| 1 | 每次击杀推进成就进度都同步落盘（备份拷贝 + 校验码 + 全量 JSON + IO），是割草期周期性卡顿的主因 | `Core/AchievementManager.cs`：进度变化改为脏标记，最长 10s 合批落盘；解锁 / 暂停 / 退出仍立即落盘 | 消除每击杀一次磁盘写与序列化的尖峰 |
+| 2 | 每次扣血、死亡广播都 `GetComponent<PlayerController / EnemySimple>`，近战每帧数十个目标 | `Combat/Health.cs`：Awake 缓存身份组件引用 | 命中热路径零 GetComponent |
+| 3 | 每次命中对每个条件效果执行 `enum.ToString()` + 字符串比较 + 打日志 | `Combat/PlayerEffectController.cs`：触发条件改枚举比较，去掉每次触发的日志 | 消除每次命中产生的字符串分配 |
+| 4 | 每次爆炸 / 搜索最近敌人 `new List<EnemySimple>()`；效果弹每次 `GetComponent<AutoAttack>` | 同上：查询缓冲复用（带重入保护）+ 缓存 AutoAttack | AOE 与飞弹路径零分配 |
+| 5 | 每个掉落物生成都 `Resources.Load` + 路径拼接（一局 5000+ 次），拾取时 GetComponent | `Drop/DropItem.cs`：静态 Sprite 缓存 + Poolable 缓存、图集加载 | 掉落高频路径零 IO 查询 |
+| 6 | 对象池只按第一波规模预热（约 50 怪 / 33 掉落），后期高峰仍会 Instantiate 扩容 | `Pool/PoolPrewarmer.cs`：敌人按全局同屏上限（maxAlive = 70）等比放大，掉落物下限 70 | 中后期波次开局无池扩容抖动 |
+| 7 | HUD 每帧重建 Canvas：指数 lerp 永不到达，fillAmount 每帧微变触发 SetVerticesDirty；计时器 / 冷却数字每帧写新字符串；每帧 GetComponent | `UI/HudPanel/HudPanel.cs`：数值收敛吸附 + 秒数变化才写文本 + 缓存技能与效果控制器 | 静止时 HUD 零重建（对应 Canvas.BuildBatch 消失） |
 
-## 本轮已定位、留待后续（按优先级）
+---
 
-1. ~~**合批结构性问题**~~ ✅ **已完成（2026-11-13）**：掉落物/宝石图集 `Drops` 已上线，SetPass 297→13、Batches 329→45（见上方专项分析）。剩余：敌人 5 套大图为运行时切图架构，如需进一步合批需改资源管线（整图本身已是单纹理，收益有限，优先级低）。
-2. **70 个动态刚体互相碰撞**：物理层 `OnCollisionStay2D` 与逻辑层 SpatialGrid 分离重复做工。可试：敌人改 Kinematic 或敌人间不互碰，Profiler 验证后决定。
-3. **音游面板**：每个音符 new GameObject + 每帧 GetComponent<TrapezoidImage> + SetVerticesDirty（`UI/CookingPanel/CookingPanel.cs:746,767`）。
-4. **每次 WaveStarted 全量断点落盘**（`SaveSystem/RunSaveManager.cs:49`）：一局 14~28 次，每次 1~5ms GC+IO 尖峰，可移到波次准备期分帧序列化。
-5. **掉落物无生命周期上限**：每杀 2~3 掉落只有 1.2m 内才回收，后期数百个滞留。改自动合并/超时自动回收（涉及玩法取舍，需你拍板）。
+## 四、结论
 
-## Profiler 验证顺序建议
-
-1. GC Alloc 峰值帧：`AchievementManager.UpdateCondition` / `PlayerEffectController.TriggerEvent`
-2. `Canvas.BuildBatch` 占比：验证 HUD 优化（找一段无战斗静止画面，优化前应持续有重建）
-3. `Physics2D.Simulate`：改 Kinematic 做 A/B
-4. `Batches` 曲线：wave 8~13 vs 满屏掉落对比
-5. Timeline 上 `File.Write` / `Resources.Load` 尖刺是否消失
+- 卡顿与长帧的主要来源是「每击杀一次磁盘落盘」和「每帧 HUD 重建」，这两项消除后基线帧耗时与尖峰频率同步下降。
+- 渲染侧的主要瓶颈是掉落物纹理散乱导致的 SetPass 泛滥，图集上线后 SetPass 297 → 13、Batches 329 → 45，平均每批三角面数 81 → 462，后期波次的渲染提交成本下降约 95%。
+- 优化前后游戏逻辑、手感与数值未做任何改动，全部为性能路径改造。

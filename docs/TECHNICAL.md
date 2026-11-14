@@ -76,7 +76,7 @@ stateDiagram-v2
 | **掉落物逐次 `Resources.Load`**（一局 5000+ 次，含路径字符串分配） | 静态 Sprite 缓存（跨实例共享） | 掉落高频路径零 IO 查询 |
 | **无图集**：9 种食材图标 + 经验宝石各持独立纹理，与 5 套敌人贴图交错渲染，每次切换即一次 SetPass | `SpriteAtlas`（Drops）打包掉落物 + **图集优先加载**（图集缺失自动回退 `Resources.Load`，不影响 UI 图标路径） | **SetPass Calls 297 → 13（↓95%）**、**Batches 329 → 45（↓86%）** |
 
-> 数据说明：均为 Unity Editor 内同场景、同波次、各 60 秒的 A/B 实测；基线帧耗时受 VSync 状态影响，故以 GC 尖峰形态、SetPass / Batches 等与刷新率无关的指标作为对照依据。完整记录、实测方法与遗留项见 [PerformanceNotes.md](../PerformanceNotes.md)。
+> 数据说明：均为 Unity Editor 内同场景、同波次的实测；基线帧耗时受 VSync 状态影响，故以 GC 尖峰形态、SetPass / Batches 等与刷新率无关的指标作为对照依据。完整对比记录见 [PerformanceNotes.md](../PerformanceNotes.md)。
 
 ### 6. 数值工程
 
