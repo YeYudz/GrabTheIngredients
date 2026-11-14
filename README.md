@@ -4,171 +4,64 @@
 ![C#](https://img.shields.io/badge/C%23-155%20scripts%20%2F%2031k%20lines-blue?logo=csharp)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20PC-lightgrey)
 
-> Unity 2D Roguelite 动作游戏：**波次割草 × 画中画节拍 × 音游&BOSS**。
-> 全部玩法设计、系统架构与数值平衡由个人独立开发完成。
+| ![波次割草战斗](docs/screenshots/gameplay.png) | ![画中画炒菜小游戏](docs/screenshots/cooking.png) | ![音游BOSS战](docs/screenshots/rhythm-boss.png) |
+|:---:|:---:|:---:|
+| 波次割草战斗 | 边打怪边炒菜的画中画小游戏 | 音游决胜负的 BOSS 战 |
 
----
+🎬 **[试玩演示视频（B 站）](https://b23.tv/4fMksO2)**
 
-## 核心循环
+## 这是什么
 
-```mermaid
-flowchart LR
-    A[战前准备<br/>角色/武器/菜品/技能] --> B[波次战斗<br/>3选1升级构筑]
-    B --> C[BOSS 战<br/>阶段/破韧/弱点]
-    C --> D[音游<br/>S/A/B/C 定生死]
-    D --> E[阶段结算]
-    E -->|下一关| B
-    E -->|通关/阵亡| F[局外养成<br/>合成/商店/永久升级/成就]
-    F --> A
-```
+**一款你能在 10 秒内看懂的 2D 动作游戏：你扮演一个厨师，被扔进怪物堆里，一边砍怪、一边颠勺炒菜。**
 
-## 特色玩法
+- 打怪掉食材 → 炒菜做成"装备"吃下去变强，**炒菜是不暂停的小游戏**，手忙脚乱才是常态；
+- 把 BOSS 血条打空还没完——**最后要过一关音乐节奏挑战**，跟着拍子按，S 评分才能送走 BOSS；
+- 打完一局拿奖励，升级菜谱、合成更强的菜、买永久属性，下一局更强。
 
-- **画中画节拍**：战斗进行中弹出的并行小游戏，边打怪边颠勺，命中率映射菜品稀有度与局内增益，炒糊则吃"手忙脚乱"Debuff——世界不暂停，对时间语义的处理与音游互不干扰。
-- **音游&BOSS**：BOSS 血量清空并不意味着胜利，而是切入 4 轨下落式音游；判定品质决定 BOSS 生死，失败即复活重打。
-- **战前构筑**：角色差异化属性 + 近战/远程 × 物理/元素武器 + 成品菜装配 + 主动技能组，装配结果实时叠加计算。
-- **局外养成**：传说菜永久入包、3 合 1 星级合成、食材出售换钱币、钱币购买永久属性、成就与图鉴系统。
+一句话：**割草游戏的爽 + 炒菜游戏的忙 + 音游的紧张，三件事同时干。**
 
-## 技术亮点
+## 我负责什么
 
-### 1. FSM 全局状态机驱动游戏流程
+**个人独立开发（作品集项目）**：玩法设计、系统架构、全部 C# 代码（155 个脚本 / 约 3.1 万行）、20 份 JSON 数值配置、数值平衡、性能优化均由本人完成。美术素材为 AI 生成（见[版权说明](docs/TECHNICAL.md#版权说明)）；使用开源基础框架 [YokiFrame](https://github.com/HinataYoki/YokiFrame) 提供事件总线 / UI / 对象池等基础设施，全部玩法系统、存档工程与数值均为独立实现。
 
-入口管理器 [GameManager.cs](Assets/Scripts/Core/GameManager.cs) 使用有限状态机（`Menu / Running / GameOver`）驱动全局流转：面板只负责显示，管理器只做数据与业务调度，两者仅通过事件与状态机交互。断点续玩、结算发币防重入等边界情况均由状态机收敛。
+## 技术难点与解法
 
-```mermaid
-stateDiagram-v2
-    [*] --> Boot
-    Boot --> MainMenu: 配置/存档初始化
-    MainMenu --> Running: 开始游戏 / 断点继续
-    Running --> GameOver: 玩家死亡
-    GameOver --> Running: 重新开始
-    GameOver --> MainMenu: 返回主菜单
-    Running --> MainMenu: 暂停退出（保存断点）
-```
+每个难点的完整展开见 [docs/TECHNICAL.md](docs/TECHNICAL.md)，性能优化的实测记录见 [PerformanceNotes.md](PerformanceNotes.md)。
 
-### 2. 事件中心：模块间零直接引用
+### ① 断点续玩：保存"整个世界"
 
-[GameEvents.cs](Assets/Scripts/Core/GameEvents.cs) 集中定义 **40+ 全局事件**（struct 强类型），所有跨模块通信走事件总线 `Send / Register`，并统一使用 `UnRegisterWhenGameObjectDestroyed` 防止事件泄漏。业务层广播 `DamageDealt`，表现层工厂（飘字 / 受击闪白 / 震屏）自行订阅播放——业务与表现完全解耦。
+**难点**：存档瞬间的场面里有上百个活动对象——每只怪的位置血量、每个掉落物、刷怪进度、BOSS 阶段甚至音游判定进度，少存一样续玩就穿帮。
+**解法**：全量快照 + 版本迁移链。已实现 **V0→V1.3 共 4 个迁移器**（玩家升级存档不删档）、原子写（临时文件替换防坏档）、**每波开始自动落盘**（强杀进程最多丢 1 波）。
 
-### 3. 数据驱动：20 份 JSON 配置
+### ② "世界不暂停"的画中画炒菜
 
-[GameDataMgr.cs](Assets/Scripts/Core/GameDataMgr.cs) 启动时一次性加载全部配置并构建 O(1) 字典索引，附带启动自检。角色、武器、敌人、波次、BOSS、菜谱、音游、效果引擎、经济系统全部配置化——**加新角色、调数值不碰一行代码**。局内 49 张升级 Buff 卡全部由效果引擎按 `trigger` 分流驱动。
+**难点**：战斗、炒菜、音游**三套时间轴同时跑**——炒菜面板弹出时怪还在打你，判定窗口、动画、节奏判定互不能抢时间。
+**解法**：把"时间语义"从面板里剥离，由独立音游引擎与效果引擎统一驱动（23 个 UI 面板全部只做显示），跨模块通信走 **40+ 强类型事件**，业务与表现零直接引用。
 
-### 4. 工程化存档系统
+### ③ 割草局的性能：Profiler 定位 + A/B 实测
 
-[SaveSystem](Assets/Scripts/SaveSystem/RunSaveManager.cs) 是本项目的工程重点：
+**难点**：后期波次同屏 **70 个敌人**、一局 **2193 只**怪物与上千掉落物，GC 尖峰和渲染状态切换随混编度暴涨。
+**解法**：空间网格把索敌从全图 O(N) 降到局部 O(k)；对象池按同屏上限预热；再用 Profiler 逐帧定位真实热点逐个修（击杀链路落盘合批、命中路径零 GC、HUD 零重建、掉落物图集化）。
+**实测数字**（优化前 / 后同场景各 60 秒 A/B）：**SetPass Calls 297 → 13（↓95%）**、**Batches 329 → 45（↓86%）**、GC 尖峰由密集周期性转为稀疏。
 
-- **真·断点续玩**：保存瞬间的完整快照——玩家属性血量、场上每只怪的位置与血量、每个掉落物、刷怪游标、BOSS 破韧与音游进度全部落盘，续玩原样接上；
-- **崩溃韧性**：每波开始自动落盘，强杀进程最多丢当前波；
-- **版本迁移链**：V0 → V1.3 共 4 个迁移器（[Migrations/](Assets/Scripts/SaveSystem/Migrations/)），存档结构升级不需要玩家删档；
-- **可靠性**：原子写（临时文件替换）、坏档自动丢弃、备份与加密。
+### ④ 数值工程：让 20 分钟的局"一直有事做"
 
-### 5. 性能优化
+**难点**：单局 **14 波 / 2193 只敌人 / 约 20.5 分钟**的节奏要靠曲线撑住——生成太密杀不过来，太稀就无聊。
+**解法**：生成用两段曲线建模，用模拟脚本推演验证，硬约束为**击杀速率 > 生成速率**；伤害公式统一收敛到单一计算器，属性加成收拢到单一聚合器，数值不互相污染。
 
-**架构层（前瞻设计）**
+## 怎么运行
 
-- **空间网格** [SpatialGrid.cs](Assets/Scripts/Combat/SpatialGrid.cs)：索敌 / 近战 / AOE 查询从全图 O(N) 降到局部 O(k)，跨格才迁移注册；
-- **对象池** [PoolFactory](Assets/Scripts/Pool/PoolFactory.cs) + 按同屏上限预热：同屏上百敌人稳定帧率，战斗中期不再因池扩容产生 Instantiate 抖动；
-- 查询列表复用、事件驱动 UI（BOSS 血条不再每帧轮询）等细节。
+1. 安装 Unity **2022.3.62f3 LTS**，`git clone` 本仓库后用 Unity Hub 打开；
+2. 打开 `Assets/Scenes/Boot` 场景；
+3. 点 **Play**。
 
-**热点层（Profiler 定位 → A/B 实测验证）**
+## 架构说明
 
-对 wave 8~13 高峰期（同屏 70 敌人 + 大量掉落物）逐帧分析，定位并修复了下面这些真实热点，每一项都用「优化前 / 优化后 · 同场景同波次各 60 秒」的对照数据验证：
+三层结构：**表现层**（23 个 UI 面板 + 战斗反馈工厂）→ **业务层**（FSM 驱动的 GameManager + 战斗系统群）→ **数据层**（20 份 JSON 配置 + 版本化存档）；所有跨模块通信走事件总线，模块间零直接引用。架构图见 [docs/TECHNICAL.md](docs/TECHNICAL.md#架构总览)。
 
-| Profiler 定位到的热点 | 优化手法 | 实测结果 |
-|---|---|---|
-| **击杀链路同步落盘**：每次击杀推进成就进度 → 备份拷贝 + 校验码 + 全量 JSON 序列化 + 磁盘 IO | 脏标记合批落盘（最长 10s），成就解锁 / 暂停 / 退出时立即落盘 | GC 分配尖峰由**密集周期性**转为**稀疏**；击杀密集段连续出现的主线程尖峰消失 |
-| **命中热路径分配**：每次扣血 `GetComponent`、每次效果判定 `enum.ToString()` + 字符串比较 + 高频日志、每次 AOE `new List` | Awake 缓存身份引用；枚举比较替代字符串；查询缓冲复用（带重入保护） | 命中 / AOE 路径**零 GC** |
-| **HUD 每帧重建 Canvas**：指数 lerp 数学上永不到达 → `fillAmount` 每帧微变触发顶点重建；倒计时数字每帧写新字符串 | 平滑条收敛吸附（到阈值即停）+ 秒数变化才写 text + 缓存组件引用 | 静止画面 HUD **零重建**，`Canvas.BuildBatch` 不再持续出现 |
-| **掉落物逐次 `Resources.Load`**（一局 5000+ 次，含路径字符串分配） | 静态 Sprite 缓存（跨实例共享） | 掉落高频路径零 IO 查询 |
-| **无图集**：9 种食材图标 + 经验宝石各持独立纹理，与 5 套敌人贴图交错渲染，每次切换即一次 SetPass | `SpriteAtlas`（Drops）打包掉落物 + **图集优先加载**（图集缺失自动回退 `Resources.Load`，不影响 UI 图标路径） | **SetPass Calls 297 → 13（↓95%）**、**Batches 329 → 45（↓86%）** |
+## 后续计划
 
-> 数据说明：均为 Unity Editor 内同场景、同波次、各 60 秒的 A/B 实测；基线帧耗时受 VSync 状态影响，故以 GC 尖峰形态、SetPass / Batches 等与刷新率无关的指标作为对照依据。完整记录、实测方法与遗留项见 [PerformanceNotes.md](PerformanceNotes.md)。
-
-### 6. 数值工程
-
-单局 14 波 / 2193 只敌人生成两段曲线 / 约 20.5 分钟节奏模型，通过模拟脚本推演验证，硬约束为**击杀速率必须大于生成速率**；伤害公式统一收敛到 [DamageCalculator.cs](Assets/Scripts/Combat/DamageCalculator.cs)，属性加成收拢到单一聚合器，避免数值散落各处互相污染。
-
-## 架构总览
-
-```mermaid
-flowchart TB
-    subgraph V["表现层 View"]
-        UI["UIPanel × 23<br/>HUD · 音游 · 商店 · 背包 · 结算…"]
-        FX["CombatFeedbackFactory<br/>飘字 · 受击闪白 · 震屏"]
-    end
-
-    subgraph C["业务层 Controller"]
-        GM["GameManager<br/>FSM 全局状态机"]
-        META["MetaManager<br/>局外养成 · 经济"]
-        SYS["战斗系统群<br/>波次 · BOSS · 炒菜 · 技能 · Buff"]
-    end
-
-    subgraph M["数据层 Model"]
-        CFG[("GameDataMgr<br/>20 份 JSON 配置<br/>O(1) 索引 · 启动自检")]
-        SAVE[("SaveSystem<br/>版本迁移 · 原子写<br/>断点续玩 · 备份加密")]
-    end
-
-    BUS(("EventKit 事件中心<br/>40+ 全局事件"))
-
-    C -- Send / Register --> BUS
-    BUS -- 订阅 --> V
-    C --> M
-```
-
-## 项目规模
-
-| 指标 | 数量 |
-|---|---|
-| C# 脚本 | 155 个 / 约 31,000 行 |
-| JSON 数据配置 | 20 份 |
-| UI 面板 | 23 个 |
-| 全局事件 | 40+ |
-| 存档版本迁移器 | 4 个 |
-| 升级 Buff 卡 | 49 张（全配置驱动） |
-| 单局节奏模型 | 14 波 / 约 20.5 分钟 |
-
-## 目录结构
-
-```
-Assets/
-├─ Resources/
-│  ├─ Data/          # 20 份 JSON 数值配置（角色/武器/敌人/波次/BOSS/菜谱/音游/效果引擎/经济…）
-│  ├─ Art/           # 2D 美术资源
-│  └─ Audio/         # BGM
-├─ Scripts/
-│  ├─ Core/          # GameManager(FSM)、事件定义、配置/存档/音频/成就等全局系统
-│  ├─ Combat/        # 伤害计算、效果引擎、空间网格、状态效果、主动技能
-│  ├─ Boss/          # BOSS 控制器 / 阶段 / 破韧 / 音游衔接
-│  ├─ Rhythm/        # 烹饪音游引擎
-│  ├─ Wave/          # 波次生成
-│  ├─ Player/        # 玩家控制 / 属性聚合 / 武器攻击
-│  ├─ Enemy/         # 敌人 AI
-│  ├─ Drop/          # 掉落系统
-│  ├─ Pool/          # 对象池工厂 / 预热
-│  ├─ SaveSystem/    # 断点续玩 / 版本迁移 / 备份 / 加密
-│  └─ UI/            # 23 个面板（Designer 分部类 + 业务逻辑分离）
-Packages/            # 依赖声明（YokiFrame：FSM / EventKit / UIKit / PoolKit）
-ProjectSettings/
-```
-
-## 运行
-
-1. 安装 Unity **2022.3.62f3 LTS**（Unity Hub）；
-2. `git clone` 本仓库后用 Unity Hub 打开项目根目录，等待首次导入；
-3. 打开 `Assets/Scenes/Boot` 场景，点击 Play 运行。
-
-## 演示视频
-
-> 试玩演示视频链接:https://b23.tv/4fMksO2
-
-
-## 技术栈说明
-
-- **引擎**：Unity 2022.3 LTS（UGUI、2D Animation、Tilemap）
-- **基础设施框架**：[YokiFrame](https://github.com/HinataYoki/YokiFrame)（开源，提供 FSM / EventKit / UIKit / PoolKit 基础设施）；全部玩法系统、存档工程、数据配置、数值平衡为独立实现
-- **语言**：C# / JSON 数据驱动 / LitJson
-
-## 版权说明
-
-本项目包含AI生成内容，代码与美术资源仅供学习交流与个人作品展示，未经授权请勿用于商业用途。
+- [ ] 用 Development Build 复测性能数字，替换当前 Editor 实测值
+- [ ] 敌人贴图资源管线升级（当前为运行时切整图，无法图集化）
+- [ ] 遗留性能项：敌人刚体碰撞策略、音游音符对象化（清单见 [PerformanceNotes.md](PerformanceNotes.md)）
+- [ ] 补充后期波次演示 GIF
