@@ -41,9 +41,9 @@ stateDiagram-v2
 
 ### 2. 事件中心：模块间零直接引用
 
-[GameEvents.cs](../Assets/Scripts/Core/GameEvents.cs) 集中定义 **40+ 全局事件**（struct 强类型），所有跨模块通信走事件总线 `Send / Register`，并统一使用 `UnRegisterWhenGameObjectDestroyed` 防止事件泄漏。业务层广播 `DamageDealt`，表现层工厂（飘字 / 受击闪白 / 震屏）自行订阅播放——业务与表现完全解耦。
+[GameEvents.cs](../Assets/Scripts/Core/GameEvents.cs) 集中定义 **50 个全局事件**（struct 强类型），所有跨模块通信走事件总线 `Send / Register`，并统一使用 `UnRegisterWhenGameObjectDestroyed` 防止事件泄漏。业务层广播 `DamageDealt`，表现层工厂（飘字 / 受击闪白 / 震屏）自行订阅播放——业务与表现完全解耦。
 
-### 3. 数据驱动：20 份 JSON 配置
+### 3. 数据驱动：21 份 JSON 配置
 
 [GameDataMgr.cs](../Assets/Scripts/Core/GameDataMgr.cs) 启动时一次性加载全部配置并构建 O(1) 字典索引，附带启动自检。角色、武器、敌人、波次、BOSS、菜谱、音游、效果引擎、经济系统全部配置化——**加新角色、调数值不碰一行代码**。局内 49 张升级 Buff 卡全部由效果引擎按 `trigger` 分流驱动。
 
@@ -98,11 +98,11 @@ flowchart TB
     end
 
     subgraph M["数据层 Model"]
-        CFG[("GameDataMgr<br/>20 份 JSON 配置<br/>O(1) 索引 · 启动自检")]
+        CFG[("GameDataMgr<br/>21 份 JSON 配置<br/>O(1) 索引 · 启动自检")]
         SAVE[("SaveSystem<br/>版本迁移 · 原子写<br/>断点续玩 · 备份加密")]
     end
 
-    BUS(("EventKit 事件中心<br/>40+ 全局事件"))
+    BUS(("EventKit 事件中心<br/>50 个全局事件"))
 
     C -- Send / Register --> BUS
     BUS -- 订阅 --> V
@@ -113,10 +113,10 @@ flowchart TB
 
 | 指标 | 数量 |
 |---|---|
-| C# 脚本 | 155 个 / 约 31,000 行 |
-| JSON 数据配置 | 20 份 |
-| UI 面板 | 23 个 |
-| 全局事件 | 40+ |
+| C# 脚本 | 156 个 / 约 32,000 行 |
+| JSON 数据配置 | 21 份 |
+| UI 面板 | 21 个 |
+| 全局事件 | 50 个 |
 | 存档版本迁移器 | 4 个 |
 | 升级 Buff 卡 | 49 张（全配置驱动） |
 | 单局节奏模型 | 14 波 / 约 20.5 分钟 |
@@ -126,7 +126,7 @@ flowchart TB
 ```
 Assets/
 ├─ Resources/
-│  ├─ Data/          # 20 份 JSON 数值配置（角色/武器/敌人/波次/BOSS/菜谱/音游/效果引擎/经济…）
+│  ├─ Data/          # 21 份 JSON 数值配置（角色/武器/敌人/波次/BOSS/菜谱/音游/效果引擎/经济…）
 │  ├─ Art/           # 2D 美术资源
 │  └─ Audio/         # BGM
 ├─ Scripts/
@@ -140,7 +140,7 @@ Assets/
 │  ├─ Drop/          # 掉落系统
 │  ├─ Pool/          # 对象池工厂 / 预热
 │  ├─ SaveSystem/    # 断点续玩 / 版本迁移 / 备份 / 加密
-│  └─ UI/            # 23 个面板（Designer 分部类 + 业务逻辑分离）
+│  └─ UI/            # 21 个面板（Designer 分部类 + 业务逻辑分离）
 Packages/            # 依赖声明（YokiFrame：FSM / EventKit / UIKit / PoolKit）
 ProjectSettings/
 ```

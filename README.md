@@ -1,7 +1,7 @@
 # GrabTheIngredients
 
 ![Unity](https://img.shields.io/badge/Unity-2022.3.62f3-black?logo=unity)
-![C#](https://img.shields.io/badge/C%23-155%20scripts%20%2F%2031k%20lines-blue?logo=csharp)
+![C#](https://img.shields.io/badge/C%23-156%20scripts%20%2F%2032k%20lines-blue?logo=csharp)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20PC-lightgrey)
 
 | ![波次割草战斗](docs/screenshots/gameplay.png) | ![画中画炒菜小游戏](docs/screenshots/cooking.png) | ![音游BOSS战](docs/screenshots/rhythm-boss.png) |
@@ -22,7 +22,7 @@
 
 ## 我负责什么
 
-**个人独立开发（作品集项目）**：玩法设计、系统架构、全部 C# 代码（155 个脚本 / 约 3.1 万行）、20 份 JSON 数值配置、数值平衡、性能优化均由本人完成。美术素材为 AI 生成（见[版权说明](docs/TECHNICAL.md#版权说明)）；使用开源基础框架 [YokiFrame](https://github.com/HinataYoki/YokiFrame) 提供事件总线 / UI / 对象池等基础设施，全部玩法系统、存档工程与数值均为独立实现。
+**个人独立开发（作品集项目）**：玩法设计、系统架构、全部 C# 代码（156 个脚本 / 约 3.2 万行）、21 份 JSON 数值配置、数值平衡、性能优化均由本人完成。美术素材为 AI 生成（见[版权说明](docs/TECHNICAL.md#版权说明)）；使用开源基础框架 [YokiFrame](https://github.com/HinataYoki/YokiFrame) 提供事件总线 / UI / 对象池等基础设施，全部玩法系统、存档工程与数值均为独立实现。
 
 ## 技术难点与解法
 
@@ -36,7 +36,7 @@
 ### ② "世界不暂停"的画中画炒菜
 
 **难点**：战斗、炒菜、音游**三套时间轴同时跑**——炒菜面板弹出时怪还在打你，判定窗口、动画、节奏判定互不能抢时间。
-**解法**：把"时间语义"从面板里剥离，由独立音游引擎与效果引擎统一驱动（23 个 UI 面板全部只做显示），跨模块通信走 **40+ 强类型事件**，业务与表现零直接引用。
+**解法**：把"时间语义"从面板里剥离，由独立音游引擎与效果引擎统一驱动（21 个 UI 面板全部只做显示），跨模块通信走 **50 个强类型事件**，业务与表现零直接引用。
 
 ### ③ 割草局的性能：Profiler 定位 + A/B 实测
 
@@ -59,7 +59,7 @@
 
 ## 架构说明
 
-三层结构：**表现层**（23 个 UI 面板 + 战斗反馈工厂）→ **业务层**（FSM 驱动的 GameManager + 战斗系统群）→ **数据层**（20 份 JSON 配置 + 版本化存档）；所有跨模块通信走事件总线，模块间零直接引用。架构图见 [docs/TECHNICAL.md](docs/TECHNICAL.md#架构总览)。
+三层结构：**表现层**（21 个 UI 面板 + 战斗反馈工厂）→ **业务层**（FSM 驱动的 GameManager + 战斗系统群）→ **数据层**（21 份 JSON 配置 + 版本化存档）；所有跨模块通信走事件总线，模块间零直接引用。架构图见 [docs/TECHNICAL.md](docs/TECHNICAL.md#架构总览)。
 
 ## 后续计划
 
